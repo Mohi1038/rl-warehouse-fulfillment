@@ -107,6 +107,18 @@ CURRICULUM_LEVELS: tuple[dict, ...] = (
 )
 
 
+def apply_level(config: EnvConfig, level: int) -> EnvConfig:
+    """Compose a curriculum level with ``config``: rates and slack multiply, features can only be switched off."""
+    spec = CURRICULUM_LEVELS[level]
+    return config.replace(
+        lambda_mult=config.lambda_mult * spec["lambda_mult"],
+        slack_mult=config.slack_mult * spec["slack_mult"],
+        battery_enabled=config.battery_enabled and spec["battery_enabled"],
+        shocks_enabled=config.shocks_enabled and spec["shocks_enabled"],
+        blocked_aisles=max(config.blocked_aisles, spec["blocked_aisles"]),
+    )
+
+
 def tiny_config(**overrides) -> EnvConfig:
     """7x5 grid, at most 3 orders, capacity 2, one dock, no battery (PLAN.md §4.4).
 

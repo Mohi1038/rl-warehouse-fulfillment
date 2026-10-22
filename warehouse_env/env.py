@@ -17,7 +17,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from .config import CURRICULUM_LEVELS, EnvConfig
+from .config import CURRICULUM_LEVELS, EnvConfig, apply_level
 from .layout import Layout
 from .orders import Order, OrderGenerator
 from .reward import RewardAccumulator, total, zero_terms
@@ -138,7 +138,7 @@ class WarehouseEnv(gym.Env):
         rng = self.np_random
         cfg = self.config
         if self.level is not None:
-            cfg = cfg.replace(**CURRICULUM_LEVELS[self.level])
+            cfg = apply_level(cfg, self.level)
         if options and "config" in options:
             cfg = cfg.replace(**options["config"])
         if cfg.domain_randomization:
