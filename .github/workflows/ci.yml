@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.1
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Lint
+        run: |
+          ruff check .
+          black --check .
+      - name: Unit tests and env invariants
+        run: pytest -q
+      - name: One-minute PPO smoke run
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: |
+          python train.py --config configs/ppo_attn.yaml --seed 0 --out /tmp/ci_runs \
+            --set algo_config.total_decisions=16384 algo_config.n_envs=4 algo_config.n_steps=256 eval_every=2 eval_episodes=4
+          python evaluate.py --model /tmp/ci_runs/ppo_attn/s0/best.pt --agents edf --episodes 5
+      - name: Pretrained checkpoint evaluates out of the box
+        run: python evaluate.py --model models/best_ppo_attn.pt --agents edf greedy --episodes 10
