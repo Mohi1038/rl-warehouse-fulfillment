@@ -148,7 +148,15 @@ class PPOTrainer:
             with torch.no_grad():
                 _, last_value, _ = self.net(to_torch(obs))
             advantages, returns = smdp_gae(
-                rewards, values, dones, taus, last_value.numpy(), cfg.gamma, cfg.gae_lambda, cfg.smdp_discount, cfg.lambda_per_tick
+                rewards,
+                values,
+                dones,
+                taus,
+                last_value.numpy(),
+                cfg.gamma,
+                cfg.gae_lambda,
+                cfg.smdp_discount,
+                cfg.lambda_per_tick,
             )
             metrics = self._update(buffers, actions, logprobs, values, advantages, returns, ent_coef, batch)
             metrics.update({f"reward_terms/{k}": v / n for k, v in term_sums.items()})
@@ -157,7 +165,15 @@ class PPOTrainer:
             metrics["charts/lr"] = self.optimizer.param_groups[0]["lr"]
             if self.episodes:
                 recent = self.episodes[-100:]
-                for key in ("return", "on_time_pct", "express_on_time_pct", "revenue_captured_pct", "trucks_missed", "battery_failures", "items_per_trip"):
+                for key in (
+                    "return",
+                    "on_time_pct",
+                    "express_on_time_pct",
+                    "revenue_captured_pct",
+                    "trucks_missed",
+                    "battery_failures",
+                    "items_per_trip",
+                ):
                     metrics[f"episode/{key}"] = float(np.mean([e[key] for e in recent]))
             if self.curriculum.step():
                 self.envs.call("set_level", self.curriculum.level)

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 import numpy as np
@@ -132,7 +132,7 @@ class Layout:
         return cell if isinstance(cell, (int, np.integer)) else self.cell_index[cell]
 
 
-@lru_cache(maxsize=None)
+@cache
 def _load_named(name: str) -> Layout:
     return Layout.from_file(LAYOUT_DIR / f"{name}.txt")
 

@@ -113,9 +113,17 @@ class AttentionActorCritic(nn.Module):
 
 
 class MLPActorCritic(nn.Module):
-    def __init__(self, n_docks: int, n_orders: int, hidden: int = 256, use_robots: bool = False, sort_by_slack: bool = True) -> None:
+    def __init__(
+        self, n_docks: int, n_orders: int, hidden: int = 256, use_robots: bool = False, sort_by_slack: bool = True
+    ) -> None:
         super().__init__()
-        self.kwargs = {"n_docks": n_docks, "n_orders": n_orders, "hidden": hidden, "use_robots": use_robots, "sort_by_slack": sort_by_slack}
+        self.kwargs = {
+            "n_docks": n_docks,
+            "n_orders": n_orders,
+            "hidden": hidden,
+            "use_robots": use_robots,
+            "sort_by_slack": sort_by_slack,
+        }
         self.n_orders = n_orders
         self.use_robots = use_robots
         self.sort_by_slack = sort_by_slack

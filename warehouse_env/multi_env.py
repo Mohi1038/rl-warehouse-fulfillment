@@ -14,7 +14,9 @@ from .env import WarehouseEnv
 
 
 class MultiRobotWarehouseEnv(WarehouseEnv):
-    def __init__(self, config: EnvConfig | dict | None = None, n_robots: int = 2, render_mode: str | None = None, **overrides) -> None:
+    def __init__(
+        self, config: EnvConfig | dict | None = None, n_robots: int = 2, render_mode: str | None = None, **overrides
+    ) -> None:
         if isinstance(config, EnvConfig):
             config = config.replace(n_robots=n_robots, include_robot_tokens=True, **overrides)
         else:

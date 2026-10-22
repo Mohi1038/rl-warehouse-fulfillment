@@ -113,11 +113,20 @@ class TorchPolicy:
         return None if self.last_attention is None else self.last_attention[0]
 
 
-def save_checkpoint(path: str | Path, net: torch.nn.Module, algo: str, net_kind: str, config: dict, extra: dict | None = None) -> None:
+def save_checkpoint(
+    path: str | Path, net: torch.nn.Module, algo: str, net_kind: str, config: dict, extra: dict | None = None
+) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
-        {"algo": algo, "net_kind": net_kind, "net_kwargs": net.kwargs, "state_dict": net.state_dict(), "config": config, **(extra or {})},
+        {
+            "algo": algo,
+            "net_kind": net_kind,
+            "net_kwargs": net.kwargs,
+            "state_dict": net.state_dict(),
+            "config": config,
+            **(extra or {}),
+        },
         path,
     )
 

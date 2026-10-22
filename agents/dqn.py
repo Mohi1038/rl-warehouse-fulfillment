@@ -115,7 +115,15 @@ class PrioritizedReplay:
         weights = (len(self) * np.maximum(probs, 1e-12)) ** (-beta)
         weights /= weights.max()
         pick = lambda store: {k: v[indices] for k, v in store.items()}  # noqa: E731
-        return indices, pick(self.obs), self.actions[indices], self.returns[indices], self.discounts[indices], pick(self.next_obs), weights
+        return (
+            indices,
+            pick(self.obs),
+            self.actions[indices],
+            self.returns[indices],
+            self.discounts[indices],
+            pick(self.next_obs),
+            weights,
+        )
 
     def update_priorities(self, indices, td_errors) -> None:
         priorities = np.abs(td_errors) + self.eps
@@ -199,7 +207,9 @@ class DQNTrainer:
                 self.ticks += tau
                 # On termination the bootstrap discount is 0, so the (already reset) next obs is never used.
                 nxt = {k: v[i] for k, v in next_obs.items()}
-                for item in nsteps[i].push({k: v[i] for k, v in obs.items()}, actions[i], rewards[i] * cfg.reward_scale, tau, nxt, done[i]):
+                for item in nsteps[i].push(
+                    {k: v[i] for k, v in obs.items()}, actions[i], rewards[i] * cfg.reward_scale, tau, nxt, done[i]
+                ):
                     replay.add(*item)
                 if done[i]:
                     stats = info_value(infos, "episode_stats", i, True)
@@ -223,7 +233,15 @@ class DQNTrainer:
                 log["charts/decisions_per_s"] = self.decisions / (time.time() - start)
                 if self.episodes:
                     recent = self.episodes[-100:]
-                    for key in ("return", "on_time_pct", "express_on_time_pct", "revenue_captured_pct", "trucks_missed", "battery_failures", "items_per_trip"):
+                    for key in (
+                        "return",
+                        "on_time_pct",
+                        "express_on_time_pct",
+                        "revenue_captured_pct",
+                        "trucks_missed",
+                        "battery_failures",
+                        "items_per_trip",
+                    ):
                         log[f"episode/{key}"] = float(np.mean([e[key] for e in recent]))
                 if self.curriculum.step():
                     self.envs.call("set_level", self.curriculum.level)

@@ -92,7 +92,9 @@ class Renderer:
                     color = COLORS["shelf_hot"] if (r, c) in hot else COLORS["shelf"]
                     pg.draw.rect(screen, color, rect.inflate(-6, -6), border_radius=4)
                     if hot.get((r, c), 0) > 0.05:
-                        pg.draw.rect(screen, COLORS["attn"], rect.inflate(-2, -2), width=max(1, int(4 * hot[(r, c)])), border_radius=5)
+                        pg.draw.rect(
+                            screen, COLORS["attn"], rect.inflate(-2, -2), width=max(1, int(4 * hot[(r, c)])), border_radius=5
+                        )
                 else:
                     pg.draw.rect(screen, COLORS["floor"], rect)
                 pg.draw.rect(screen, (210, 214, 222), rect, width=1)
@@ -163,13 +165,23 @@ class Renderer:
             pg.draw.rect(screen, COLORS["tiers"][order.tier], pg.Rect(x0 + 12, y + 5, 16, 16), border_radius=3)
             label = "VIP" if order.spec.vip else "ESB"[order.tier]
             self._text(label, (x0 + 20, y + 13), COLORS["text"], self.small, center=True)
-            self._text(f"#{order.oid:<3d} ${order.value:5.1f}  {order.unpicked}/{order.n}  D{order.dock}", (x0 + 36, y + 7), COLORS["text"], self.font)
+            self._text(
+                f"#{order.oid:<3d} ${order.value:5.1f}  {order.unpicked}/{order.n}  D{order.dock}",
+                (x0 + 36, y + 7),
+                COLORS["text"],
+                self.font,
+            )
             slack = order.truck.scheduled_departure - env.time
             bar_w = int(90 * np.clip(slack / 200.0, 0.03, 1.0))
             pg.draw.rect(screen, slack_color(slack), pg.Rect(x0 + PANEL - 108, y + 7, bar_w, 12), border_radius=3)
         footer = TOP + 26 + env.max_orders * 30 + 6
         battery = f"{100 * robot.battery / env.cfg.battery_capacity:3.0f}%" if env.battery_on else "off"
-        self._text(f"robot {robot.rid}  load {robot.load}/{env.capacity}  battery {battery}", (x0 + 12, footer), COLORS["muted"], self.font)
+        self._text(
+            f"robot {robot.rid}  load {robot.load}/{env.capacity}  battery {battery}",
+            (x0 + 12, footer),
+            COLORS["muted"],
+            self.font,
+        )
 
     def _text(self, text, pos, color, font, center=False):
         surface = font.render(text, True, color)
@@ -177,7 +189,9 @@ class Renderer:
         self.screen.blit(surface, rect)
 
 
-def record_gif(env: WarehouseEnv, policy, path: str, seed: int = 0, fps: int = 6, max_frames: int = 400, attention_fn=None) -> int:
+def record_gif(
+    env: WarehouseEnv, policy, path: str, seed: int = 0, fps: int = 6, max_frames: int = 400, attention_fn=None
+) -> int:
     """Roll out ``policy`` (obs -> action) in an ``rgb_array`` env and save an animated GIF."""
     import imageio.v2 as imageio
 

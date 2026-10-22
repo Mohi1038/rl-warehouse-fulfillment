@@ -133,7 +133,12 @@ def main() -> None:
     print_table(results)
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-        payload = {"env": config.to_dict(), "seeds": list(seeds), "summary": {k: summarize(v) for k, v in results.items()}, "episodes": results}
+        payload = {
+            "env": config.to_dict(),
+            "seeds": list(seeds),
+            "summary": {k: summarize(v) for k, v in results.items()},
+            "episodes": results,
+        }
         Path(args.out).write_text(json.dumps(payload, indent=1, default=float))
         print(f"wrote {args.out}")
     if args.render:
