@@ -355,7 +355,7 @@ class WarehouseEnv(gym.Env):
             self._events.append(f"stranded:{robot.rid}")
             return
         self.stats["travel_ticks"] += int(self.layout.distances[robot.cell, cell])
-        robot.cell = cell
+        robot.cell = robot.target = cell
         if self.battery_on:
             robot.battery = min(cfg.battery_capacity, robot.battery - drain)
         if kind == PICK:
