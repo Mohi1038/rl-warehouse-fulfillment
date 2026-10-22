@@ -106,6 +106,7 @@ class Evaluator:
         self.every = every
         self.seeds = VAL_SEEDS[:episodes]
         self.best = -np.inf
+        self.metric = "task_return"  # return without PBRS, comparable across shaping ablations
         self.csv = CSVLogger(run_dir / "eval.csv")
 
     def due(self, index: int, total: int) -> bool:
@@ -120,10 +121,10 @@ class Evaluator:
             trainer.logger.writer.add_scalar(f"eval/{key}", value, trainer.decisions)
         extra = {"decisions": trainer.decisions, "eval": summary}
         save_checkpoint(self.run_dir / "last.pt", trainer.net, self.config["algo"], self.net_kind, self.config, extra)
-        if summary["return"] > self.best:
-            self.best = summary["return"]
+        if summary[self.metric] > self.best:
+            self.best = summary[self.metric]
             save_checkpoint(self.run_dir / "best.pt", trainer.net, self.config["algo"], self.net_kind, self.config, extra)
-        print(f"  eval @ {trainer.decisions}: return={summary['return']:.1f} on_time={summary['on_time_pct']:.1f}% best={self.best:.1f}", flush=True)
+        print(f"  eval @ {trainer.decisions}: task_return={summary['task_return']:.1f} on_time={summary['on_time_pct']:.1f}% best={self.best:.1f}", flush=True)
         return summary
 
 
