@@ -124,7 +124,10 @@ class Evaluator:
         if summary[self.metric] > self.best:
             self.best = summary[self.metric]
             save_checkpoint(self.run_dir / "best.pt", trainer.net, self.config["algo"], self.net_kind, self.config, extra)
-        print(f"  eval @ {trainer.decisions}: task_return={summary['task_return']:.1f} on_time={summary['on_time_pct']:.1f}% best={self.best:.1f}", flush=True)
+        print(
+            f"  eval @ {trainer.decisions}: task_return={summary['task_return']:.1f} on_time={summary['on_time_pct']:.1f}% best={self.best:.1f}",
+            flush=True,
+        )
         return summary
 
 
@@ -146,7 +149,7 @@ def run(config: dict, seed: int, out_root: str | Path = "runs") -> Path:
         from agents.q_learning import QLearningConfig, train_q_learning
 
         result = train_q_learning(env_config, dataclass_from(QLearningConfig, config.get("algo_config")), seed, run_dir)
-        (run_dir / "result.json").write_text(json.dumps(result, indent=2))
+        (run_dir / "DONE").write_text(json.dumps(result["q_learning"]))
         return run_dir
 
     curriculum = Curriculum(dataclass_from(CurriculumConfig, config.get("curriculum", {"enabled": False})))
@@ -158,17 +161,25 @@ def run(config: dict, seed: int, out_root: str | Path = "runs") -> Path:
         module = ppo_attn if algo == "ppo_attn" else ppo_mlp
         net = module.build_network(probe, **config.get("network", {}))
         algo_cfg = dataclass_from(PPOConfig, config.get("algo_config"))
-        evaluator = Evaluator(run_dir, config, eval_config, module.NET_KIND, config.get("eval_every", 50), config.get("eval_episodes", 20))
+        evaluator = Evaluator(
+            run_dir, config, eval_config, module.NET_KIND, config.get("eval_every", 50), config.get("eval_episodes", 20)
+        )
         trainer = PPOTrainer(net, env_config, algo_cfg, seed, logger, curriculum, evaluator)
     else:
         from agents.dqn import DQNConfig, DQNTrainer
 
         algo_cfg = dataclass_from(DQNConfig, config.get("algo_config"))
-        evaluator = Evaluator(run_dir, config, eval_config, "attention_q", config.get("eval_every", 50), config.get("eval_episodes", 20))
+        evaluator = Evaluator(
+            run_dir, config, eval_config, "attention_q", config.get("eval_every", 50), config.get("eval_episodes", 20)
+        )
         trainer = DQNTrainer(probe, env_config, algo_cfg, config.get("network", {}), seed, logger, curriculum, evaluator)
-    print(f"{name} seed={seed}: {sum(p.numel() for p in trainer.net.parameters()):,} parameters, config {asdict(algo_cfg)}", flush=True)
+    print(
+        f"{name} seed={seed}: {sum(p.numel() for p in trainer.net.parameters()):,} parameters, config {asdict(algo_cfg)}",
+        flush=True,
+    )
     trainer.train()
     logger.writer.close()
+    (run_dir / "DONE").write_text(json.dumps({"decisions": trainer.decisions, "best": evaluator.best}))
     return run_dir
 
 

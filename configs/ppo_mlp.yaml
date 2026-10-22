@@ -1,0 +1,22 @@
+# Architecture ablation: same PPO, flatten + MLP encoder over slack-sorted slots (PLAN.md §4.3)
+extends: base.yaml
+name: ppo_mlp
+algo: ppo_mlp
+network:
+  hidden: 256
+  sort_by_slack: true
+algo_config:
+  total_decisions: 2000000
+  n_envs: 16
+  n_steps: 256
+  epochs: 4
+  minibatch_size: 1024
+  lr: 3.0e-4
+  clip_coef: 0.2
+  ent_coef_start: 0.02
+  ent_coef_end: 0.001
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  gamma: 0.995
+  gae_lambda: 0.95
+  target_kl: 0.02
