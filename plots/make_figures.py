@@ -177,9 +177,10 @@ def rliable_stats(scen: dict, lines: list[str]) -> None:
     for name in agents:
         runs = min(len(scen[t]["agents"][name]) for t in tasks)
         scores[name] = np.stack([norm(t, seed_means(scen[t]["agents"][name])[:runs]) for t in tasks], axis=1)
-    agg = lambda x: np.array(
-        [metrics.aggregate_iqm(x), metrics.aggregate_mean(x), metrics.aggregate_optimality_gap(x, 1.0)]
-    )  # noqa: E731
+
+    def agg(x):
+        return np.array([metrics.aggregate_iqm(x), metrics.aggregate_mean(x), metrics.aggregate_optimality_gap(x, 1.0)])
+
     point, intervals = rly.get_interval_estimates(scores, agg, reps=2000)
 
     fig, axes = plt.subplots(1, 3, figsize=(12, 3.4), gridspec_kw={"width_ratios": [1.1, 1.1, 1.3]})
@@ -227,7 +228,7 @@ def rliable_stats(scen: dict, lines: list[str]) -> None:
     for key in pairs:
         a, b = key.split(",")
         lines.append(
-            f"| P({label(a)} > {label(b)}) | {float(prob[key]):.2f} [{float(prob_ci[key][0]):.2f}, {float(prob_ci[key][1]):.2f}] |"
+            f"| P({label(a)} > {label(b)}) | {np.ravel(prob[key])[0]:.2f} [{np.ravel(prob_ci[key])[0]:.2f}, {np.ravel(prob_ci[key])[1]:.2f}] |"
         )
 
 
@@ -238,8 +239,8 @@ def generalisation(gen: dict) -> None:
     edf = np.array(gen["task_return"]["edf"])
     diffs = {n: np.array(gen["task_return"][n]) - edf for n in panels}
     limit = max(np.abs(d).max() for d in diffs.values())
-    fig, axes = plt.subplots(1, len(panels), figsize=(5.2 * len(panels), 3.8), squeeze=False)
-    titles = {"ppo_attn": "PPO-Attention (curriculum + randomisation)", "abl_no_dr": "PPO-Attention without domain randomisation"}
+    fig, axes = plt.subplots(1, len(panels), figsize=(5.6 * len(panels), 4.0), squeeze=False, constrained_layout=True)
+    titles = {"ppo_attn": "with domain randomisation", "abl_no_dr": "without domain randomisation"}
     for ax, name in zip(axes[0], panels):
         image = ax.imshow(diffs[name], cmap=DIVERGING, norm=TwoSlopeNorm(0, -limit, limit), aspect="auto", origin="lower")
         for i in range(len(lambdas)):
@@ -248,15 +249,15 @@ def generalisation(gen: dict) -> None:
         ax.set_xticks(range(len(caps)), caps)
         ax.set_yticks(range(len(lambdas)), [f"{x:g}×" for x in lambdas])
         ax.set_xlabel("robot capacity (trained on 4–8)")
-        ax.set_ylabel("arrival-rate multiplier λ (trained on 0.6–1.4×)")
+        if name == panels[0]:
+            ax.set_ylabel("arrival-rate multiplier λ")
         ax.set_title(titles[name], loc="left", fontsize=10)
         ax.grid(False)
-        ax.add_patch(
-            plt.Rectangle((0.5, 0.5), 5, 2.5 if len(lambdas) > 3 else 1, fill=False, edgecolor=INK2, linewidth=1, linestyle=":")
-        )
+        # randomisation range during training: capacity 4–8 (columns 1–5), λ 0.6–1.4× (rows 0.75–1.25)
+        ax.add_patch(plt.Rectangle((0.5, 0.5), 5, 3, fill=False, edgecolor=INK, linewidth=1.2, linestyle=":"))
     fig.colorbar(image, ax=axes[0].tolist(), label="task return − EDF", shrink=0.85)
     fig.suptitle(
-        "E4 — generalisation: task return relative to EDF (blue = better than EDF)",
+        "E4 — generalisation: task return − EDF (blue = better; dotted box = randomisation range)",
         x=0.01,
         ha="left",
         fontsize=11,
@@ -342,8 +343,7 @@ def behaviour(data: dict) -> None:
     pairs = np.array(data["attention_pairs"])
     fig, axes = plt.subplots(1, 3, figsize=(13, 3.6))
     if len(pairs):
-        uniform = 1.0 / pairs[:, 5]
-        rel = pairs[:, 0] / uniform
+        rel = pairs[:, 0] * pairs[:, 5]  # attention share among valid orders ÷ uniform share 1/n
         slack_ticks = pairs[:, 1] * 720
         bins = np.linspace(-150, 300, 19)
         centers, mean_rel = [], []
@@ -355,7 +355,7 @@ def behaviour(data: dict) -> None:
         ax = axes[0]
         ax.plot(centers, mean_rel, color=COLORS["ppo_attn"], marker="o", markersize=5)
         ax.axhline(1.0, color=AXIS, linewidth=1)
-        ax.text(centers[-1], 1.02, "uniform", color=MUTED, fontsize=7, ha="right", va="bottom")
+        ax.text(centers[0], 1.0, " uniform", color=MUTED, fontsize=7, ha="left", va="bottom")
         ax.set_xlabel("order slack (ticks; < 0 = likely to miss its truck)")
         ax.set_ylabel("[CLS] attention ÷ uniform share")
         ax.set_title("Attention vs slack", loc="left")
@@ -421,7 +421,7 @@ def multi(data: dict, lines: list[str]) -> None:
     biggest = ks[-1]
     columns = np.array(data[biggest]["pick_columns"])
     share = columns / columns.sum(1, keepdims=True).clip(min=1)
-    image = axes[1].imshow(share, cmap=SEQUENTIAL, aspect="auto")
+    image = axes[1].imshow(share, cmap=SEQUENTIAL, aspect="auto", vmin=0)
     axes[1].set_yticks(range(len(share)), [f"robot {i}" for i in range(len(share))])
     axes[1].set_xlabel("warehouse column of pick location (west → east)")
     axes[1].set_title(

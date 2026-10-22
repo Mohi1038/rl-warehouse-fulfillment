@@ -138,11 +138,13 @@ def behaviour(runs: Path, seeds) -> dict:
             valid = obs["orders"][row, :, 0] > 0.5
             if valid.sum() < 2:
                 continue
+            share = policy.last_attention[row] * valid
+            share = share / max(share.sum(), 1e-9)  # renormalise over order tokens ([CLS] also attends to itself)
             for slot in np.flatnonzero(valid):
                 features = obs["orders"][row, slot]
                 pairs.append(
                     (
-                        float(policy.last_attention[row, slot]),
+                        float(share[slot]),
                         float(features[8]),
                         float(features[1]) * 50,
                         int(np.argmax(features[2:5])),
