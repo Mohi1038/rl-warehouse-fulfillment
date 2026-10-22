@@ -283,8 +283,7 @@ class WarehouseEnv(gym.Env):
         """Hashable state for tabular methods on small instances (see ``tiny_env``)."""
         robot = self.robots[self.active]
         orders = tuple(
-            (o.slot, o.tier, o.unpicked, o.carried, o.loaded, int(o.truck.scheduled_departure))
-            for o in self.open_orders
+            (o.slot, o.tier, tuple(zip(o.access, o.item_state)), int(o.truck.scheduled_departure)) for o in self.open_orders
         )
         return (robot.cell, int(self.time // time_bucket), orders)
 
@@ -338,9 +337,7 @@ class WarehouseEnv(gym.Env):
         robot.target = cell
         robot.busy_until = t + duration
         if self.battery_on:
-            travel_drain = (
-                drain if robot.option[0] != CHARGE else int(dist[robot.cell, cell]) * cfg.move_drain
-            )
+            travel_drain = drain if robot.option[0] != CHARGE else int(dist[robot.cell, cell]) * cfg.move_drain
             if robot.battery - travel_drain < 0:
                 robot.stranded = True
                 robot.busy_until = t + robot.battery / max(cfg.move_drain, cfg.idle_drain)

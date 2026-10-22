@@ -120,7 +120,7 @@ def apply_level(config: EnvConfig, level: int) -> EnvConfig:
 
 
 def tiny_config(**overrides) -> EnvConfig:
-    """7x5 grid, at most 3 orders, capacity 2, one dock, no battery (PLAN.md §4.4).
+    """7x5 grid, 3 single-item orders, capacity 2, one dock, no battery (PLAN.md §4.4).
 
     All orders are revealed at the start of the shift and values are set by tier, so
     the tabular state is exact and the hindsight optimum is attainable by a policy.
@@ -135,7 +135,7 @@ def tiny_config(**overrides) -> EnvConfig:
         rate_amplitude=0.0,
         value_sigma=0.0,
         spike_height=0.0,
-        items_range=(1, 2),
+        items_range=(1, 1),
         item_weight_range=(1, 1),
         min_slack=(10.0, 12.0, 15.0),
         max_total_orders=3,
