@@ -1,0 +1,22 @@
+# RL baseline: Double + dueling DQN + PER + 3-step SMDP returns on the same attention encoder (PLAN.md §4.2)
+extends: base.yaml
+name: dqn
+algo: dqn
+network:
+  d_model: 64
+  n_layers: 2
+  n_heads: 4
+algo_config:
+  total_decisions: 1000000
+  n_envs: 16
+  buffer_size: 200000
+  batch_size: 256
+  lr: 2.5e-4
+  gamma: 0.995
+  n_step: 3
+  learning_starts: 10000
+  gradient_steps: 1
+  target_update_decisions: 8000
+  eps_start: 1.0
+  eps_end: 0.05
+  eps_fraction: 0.3

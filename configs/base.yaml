@@ -1,0 +1,14 @@
+# Shared settings: training distribution, curriculum and evaluation cadence.
+torch_threads: 2
+env:
+  layouts: [train_a, train_b]
+  domain_randomization: true    # λ ∈ [0.6, 1.4]×, capacity ∈ {4..8}, jitter σ ∈ [0, 12]
+eval_env: {}                    # nominal: training layouts, no randomisation, level-2 dynamics
+curriculum:
+  enabled: true
+  max_level: 2
+  threshold: 80.0               # promote when on-time % over the last 50 episodes exceeds this
+  window: 50
+  max_updates_per_level: 60     # fallback so training always reaches the nominal level
+eval_every: 25                  # updates (4096 decisions each)
+eval_episodes: 20

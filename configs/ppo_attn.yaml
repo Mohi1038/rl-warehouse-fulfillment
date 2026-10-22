@@ -1,0 +1,23 @@
+# MAIN agent: PPO + attention encoder + pointer head (PLAN.md §4.1)
+extends: base.yaml
+name: ppo_attn
+algo: ppo_attn
+network:
+  d_model: 64
+  n_layers: 2
+  n_heads: 4
+algo_config:
+  total_decisions: 2000000
+  n_envs: 16
+  n_steps: 256
+  epochs: 4
+  minibatch_size: 1024
+  lr: 3.0e-4
+  clip_coef: 0.2
+  ent_coef_start: 0.02
+  ent_coef_end: 0.001
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  gamma: 0.995
+  gae_lambda: 0.95
+  target_kl: 0.02

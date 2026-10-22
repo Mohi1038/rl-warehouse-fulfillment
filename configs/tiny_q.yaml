@@ -1,0 +1,11 @@
+# Sanity check: tabular Q-learning on the tiny env (7x5 grid, <=3 orders, capacity 2, 1 dock, no battery)
+name: tiny_q
+algo: tiny_q
+env:
+  preset: tiny
+algo_config:
+  episodes: 60000
+  alpha: 0.1
+  eps_fraction: 0.6
+  eval_every: 5000
+  eval_episodes: 200
