@@ -135,13 +135,14 @@ def learning_curves(runs: Path, baselines: dict) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(10, 3.6))
     for algo in ("ppo_attn", "ppo_mlp", "dqn"):
         curves = []
+        # x = update × 4096: PPO updates on 16 × 256 decisions and DQN logs every 4096 decisions
         for path in sorted((runs / algo).glob("s*/eval.csv")):
             rows = list(csv.DictReader(path.open()))
-            curves.append((np.array([float(r["decisions"]) for r in rows]), np.array([float(r["task_return"]) for r in rows]),
+            curves.append((np.array([float(r["update"]) * 4096 for r in rows]), np.array([float(r["task_return"]) for r in rows]),
                            np.array([float(r["on_time_pct"]) for r in rows])))  # fmt: skip
         if not curves:
             continue
-        grid = np.linspace(0, min(c[0][-1] for c in curves), 60)
+        grid = np.linspace(max(c[0][0] for c in curves), min(c[0][-1] for c in curves), 60)
         for ax, idx in zip(axes, (1, 2)):
             ys = np.stack([np.interp(grid, c[0], c[idx]) for c in curves])
             mean, err = ys.mean(0), (1.96 * ys.std(0, ddof=1) / np.sqrt(len(ys)) if len(ys) > 1 else np.zeros_like(grid))
@@ -155,8 +156,9 @@ def learning_curves(runs: Path, baselines: dict) -> None:
     axes[0].set_ylabel("validation task return")
     axes[1].set_ylabel("validation on-time %")
     axes[0].set_title("E2 — learning curves (mean ± 95% CI)", loc="left")
-    axes[1].legend(loc="lower right")
     fig.tight_layout()
+    handles, labels_ = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels_, loc="lower center", ncol=5, fontsize=8, bbox_to_anchor=(0.5, -0.07))
     save(fig, "e2_learning_curves.png")
 
 
@@ -214,13 +216,11 @@ def rliable_stats(scen: dict, lines: list[str]) -> None:
     save(fig, "e3_rliable.png")
 
     lines.append("\n### rliable aggregates (EDF-normalised; random = 0, EDF = 1)\n")
-    lines.append("| Agent | IQM [95% CI] | Mean [95% CI] | Optimality gap |")
-    lines.append("|---|---|---|---|")
+    lines.append("| Agent | IQM [95% CI] | Mean [95% CI] |")
+    lines.append("|---|---|---|")
     for name in reversed(order):
         p, lo, hi = point[name], intervals[name][0], intervals[name][1]
-        lines.append(
-            f"| {label(name)} | {p[0]:.2f} [{lo[0]:.2f}, {hi[0]:.2f}] | {p[1]:.2f} [{lo[1]:.2f}, {hi[1]:.2f}] | {p[2]:.2f} |"
-        )
+        lines.append(f"| {label(name)} | {p[0]:.2f} [{lo[0]:.2f}, {hi[0]:.2f}] | {p[1]:.2f} [{lo[1]:.2f}, {hi[1]:.2f}] |")
     lines.append("\n| Comparison | P(X > Y) [95% CI] |")
     lines.append("|---|---|")
     pairs = {f"{a},{b}": (scores[a], scores[b]) for a in ("ppo_attn",) for b in agents if b != a}
@@ -302,7 +302,8 @@ def scaling(data: dict) -> None:
         ax.set_xlabel("order slots N_max at test time")
         ax.set_ylabel("task return")
         ax.set_title(f"arrival rate {key.split('_')[1]}×", loc="left")
-    np.atleast_1d(axes)[-1].legend(fontsize=7)
+    handles, labels_ = np.atleast_1d(axes)[0].get_legend_handles_labels()
+    fig.legend(handles, labels_, loc="lower center", ncol=4, fontsize=8, bbox_to_anchor=(0.5, -0.06))
     fig.suptitle("E6 — zero-shot scaling of the permutation-invariant policy", x=0.01, ha="left", fontsize=11, fontweight="bold")
     fig.tight_layout()
     save(fig, "e6_scaling.png")
