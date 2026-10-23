@@ -12,3 +12,6 @@ no_battery:
   env.battery_enabled: false
 no_dr:
   env.domain_randomization: false
+long_horizon:           # SMDP discounting kept, but γ = 0.9995 per tick (≈ whole-shift horizon)
+  algo_config.gamma: 0.9995
+  env.gamma: 0.9995
