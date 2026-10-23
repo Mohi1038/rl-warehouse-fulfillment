@@ -115,7 +115,8 @@ class Evaluator:
     def run(self, trainer, index: int) -> dict:
         summary = summarize(evaluate_policy(trainer.policy().act_batch, self.env_config, self.seeds))
         trainer.net.train()
-        row = {"update": index, "decisions": trainer.decisions, "ticks": trainer.ticks, **summary}
+        episode = {("episode_decisions" if k == "decisions" else k): v for k, v in summary.items()}
+        row = {"update": index, "decisions": trainer.decisions, "ticks": trainer.ticks, **episode}
         self.csv.log(row)
         for key, value in summary.items():
             trainer.logger.writer.add_scalar(f"eval/{key}", value, trainer.decisions)
