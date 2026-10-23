@@ -315,7 +315,7 @@ def ablations(data: dict, lines: list[str]) -> None:
     order = ["full"] + sorted((n for n in names if n != "full"), key=lambda n: -np.mean(data[n]))
     descriptions = {"full": "full agent", "no_attention": "− attention (MLP)", "no_mask": "− action mask", "no_pbrs": "− PBRS shaping",
                     "no_curriculum": "− curriculum", "no_smdp": "− SMDP discount", "no_battery": "− battery (easier env)",
-                    "no_dr": "− domain randomisation"}  # fmt: skip
+                    "no_dr": "− domain randomisation", "long_horizon": "SMDP, γ = 0.9995 per tick"}  # fmt: skip
     means = [np.mean(data[n]) for n in order]
     errs = [ci95(data[n]) for n in order]
     fig, ax = plt.subplots(figsize=(7, 3.6))
