@@ -1,0 +1,6 @@
+.venv
+runs
+runs_quick
+logs
+.git
+**/__pycache__

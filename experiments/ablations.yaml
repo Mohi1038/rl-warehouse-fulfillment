@@ -1,0 +1,17 @@
+# Ablations of the main agent (PLAN.md §6, E7). Each entry: name -> dotted overrides on configs/ppo_attn.yaml.
+# "no_attention" is the PPO-MLP run (configs/ppo_mlp.yaml); "no_dr" isolates domain randomisation (M9).
+no_mask:
+  algo_config.use_mask: false
+no_pbrs:
+  env.reward.alpha: 0.0
+no_curriculum:
+  curriculum.enabled: false
+no_smdp:
+  algo_config.smdp_discount: false
+no_battery:
+  env.battery_enabled: false
+no_dr:
+  env.domain_randomization: false
+long_horizon:           # SMDP discounting kept, but γ = 0.9995 per tick (≈ whole-shift horizon)
+  algo_config.gamma: 0.9995
+  env.gamma: 0.9995

@@ -1,0 +1,8 @@
+# Multi-robot bonus (PLAN.md §7): 1 robot(s), shared PPO-attention policy with robot tokens
+extends: ppo_attn.yaml
+name: multi_k1
+env:
+  n_robots: 1
+  include_robot_tokens: true
+algo_config:
+  total_decisions: 2000000

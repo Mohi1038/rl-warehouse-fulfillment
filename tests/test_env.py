@@ -73,7 +73,7 @@ def test_invariants_hold_under_random_and_heuristic_play(name, seed, edf):
     env = ENV_FACTORIES[name]()
     for policy in (None, edf(env)):
         seen = {}
-        rollout(env, policy, seed=seed, on_step=lambda e, o, r, i: _check_invariants(e, o, r, i, seen))
+        rollout(env, policy, seed=seed, on_step=lambda e, o, r, i, seen=seen: _check_invariants(e, o, r, i, seen))
 
 
 @pytest.mark.parametrize("name", ENV_FACTORIES)

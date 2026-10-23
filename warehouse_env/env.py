@@ -17,7 +17,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from .config import CURRICULUM_LEVELS, EnvConfig
+from .config import CURRICULUM_LEVELS, EnvConfig, apply_level
 from .layout import Layout
 from .orders import Order, OrderGenerator
 from .reward import RewardAccumulator, total, zero_terms
@@ -138,7 +138,7 @@ class WarehouseEnv(gym.Env):
         rng = self.np_random
         cfg = self.config
         if self.level is not None:
-            cfg = cfg.replace(**CURRICULUM_LEVELS[self.level])
+            cfg = apply_level(cfg, self.level)
         if options and "config" in options:
             cfg = cfg.replace(**options["config"])
         if cfg.domain_randomization:
@@ -224,6 +224,7 @@ class WarehouseEnv(gym.Env):
         terms = self._acc.terms(self.cfg.reward, tau, self.n_robots, stranded, shaping)
         reward = total(terms)
         self.episode_return += reward
+        self.stats["shaping"] += terms["shaping"]
         self.stats["decisions"] += 1
         self.stats["action_counts"][self._action_kind(action)] += 1
         obs = self._observation()
@@ -245,6 +246,7 @@ class WarehouseEnv(gym.Env):
         fulfilled = max(1, s["fulfilled"])
         return {
             "return": self.episode_return,
+            "task_return": self.episode_return - s["shaping"],
             "orders": s["orders"],
             "fulfilled": s["fulfilled"],
             "lost": s["lost"],
@@ -277,14 +279,13 @@ class WarehouseEnv(gym.Env):
             self._renderer.close()
             self._renderer = None
 
-    def tabular_state(self) -> tuple:
-        """Exact hashable state for tabular methods on small instances (see ``tiny_env``)."""
+    def tabular_state(self, time_bucket: float = 1.0) -> tuple:
+        """Hashable state for tabular methods on small instances (see ``tiny_env``)."""
         robot = self.robots[self.active]
         orders = tuple(
-            (o.slot, o.tier, o.unpicked, o.carried, o.loaded, int(o.truck.scheduled_departure))
-            for o in self.open_orders
+            (o.slot, o.tier, tuple(zip(o.access, o.item_state)), int(o.truck.scheduled_departure)) for o in self.open_orders
         )
-        return (robot.cell, int(self.time // 10), orders)
+        return (robot.cell, int(self.time // time_bucket), orders)
 
     # ------------------------------------------------------------------ options
     def _start_option(self, robot: _Robot, action: int) -> None:
@@ -336,9 +337,7 @@ class WarehouseEnv(gym.Env):
         robot.target = cell
         robot.busy_until = t + duration
         if self.battery_on:
-            travel_drain = (
-                drain if robot.option[0] != CHARGE else int(dist[robot.cell, cell]) * cfg.move_drain
-            )
+            travel_drain = drain if robot.option[0] != CHARGE else int(dist[robot.cell, cell]) * cfg.move_drain
             if robot.battery - travel_drain < 0:
                 robot.stranded = True
                 robot.busy_until = t + robot.battery / max(cfg.move_drain, cfg.idle_drain)
@@ -694,6 +693,6 @@ def _new_stats() -> dict:
         "orders": 0, "fulfilled": 0, "lost": 0, "deferred": 0, "closed": 0, "on_time": 0,
         "express_orders": 0, "express_on_time": 0, "revenue_total": 0.0, "revenue_captured": 0.0,
         "trucks_missed": 0, "slack_sum": 0.0, "battery_failures": 0, "travel_ticks": 0,
-        "deliveries": 0, "items_delivered": 0, "invalid_actions": 0, "decisions": 0,
+        "deliveries": 0, "items_delivered": 0, "invalid_actions": 0, "decisions": 0, "shaping": 0.0,
         "action_counts": {"pick": 0, "deliver": 0, "charge": 0, "wait": 0},
     }  # fmt: skip

@@ -1,0 +1,16 @@
+# PPO-attention on the tiny env, compared against tabular Q-learning (PLAN.md §4.4)
+extends: ppo_attn.yaml
+name: tiny_ppo
+env:
+  preset: tiny
+  layouts: [tiny]
+  domain_randomization: false
+curriculum:
+  enabled: false
+algo_config:
+  total_decisions: 300000
+  n_envs: 8
+  n_steps: 128
+  minibatch_size: 256
+  gamma: 0.999
+eval_every: 20
