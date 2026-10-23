@@ -82,6 +82,64 @@ def seed_means(entries: list[dict], key: str = "task_return") -> list[float]:
     return [e["summary"][key] for e in entries]
 
 
+def results_dashboard(scen: dict) -> None:
+    """Create a compact, presentation-friendly summary of the nominal benchmark."""
+    agents = [n for n, entries in scen["nominal"]["agents"].items() if entries and n != "random"]
+    metrics = [
+        ("task_return", "Task return", False),
+        ("on_time_pct", "On-time %", False),
+        ("express_on_time_pct", "Express on-time %", False),
+        ("travel_ticks_per_order", "Travel / order", True),
+    ]
+    values = np.array([[np.mean(seed_means(scen["nominal"]["agents"][agent], key)) for agent in agents] for key, _, _ in metrics])
+    normalized = np.empty_like(values)
+    for row, (_, _, lower_is_better) in enumerate(metrics):
+        lo, hi = values[row].min(), values[row].max()
+        normalized[row] = (hi - values[row]) / (hi - lo) if lower_is_better else (values[row] - lo) / (hi - lo)
+
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7), constrained_layout=True)
+    ax = axes[0, 0]
+    order = np.argsort(values[0])
+    ax.barh(np.arange(len(agents)), values[0, order], color=[COLORS.get(agents[i], MUTED) for i in order])
+    ax.set_yticks(np.arange(len(agents)), [label(agents[i]) for i in order])
+    ax.set_xlabel("task return")
+    ax.set_title("Nominal performance", loc="left")
+    ax.grid(axis="y", visible=False)
+
+    ax = axes[0, 1]
+    image = ax.imshow(normalized, cmap=SEQUENTIAL, vmin=0, vmax=1, aspect="auto")
+    ax.set_xticks(np.arange(len(agents)), [label(agent) for agent in agents], rotation=35, ha="right")
+    ax.set_yticks(np.arange(len(metrics)), [name for _, name, _ in metrics])
+    for row in range(len(metrics)):
+        for col in range(len(agents)):
+            ax.text(col, row, f"{normalized[row, col]:.2f}", ha="center", va="center", fontsize=8, color=INK)
+    ax.set_title("Relative score (higher is better)", loc="left")
+    fig.colorbar(image, ax=ax, shrink=0.8, label="normalised metric")
+
+    ax = axes[1, 0]
+    for agent in agents:
+        entries = scen["nominal"]["agents"][agent]
+        returns = np.concatenate([np.asarray(entry["task_return"], dtype=float) for entry in entries])
+        ax.hist(returns, bins=18, alpha=0.32, density=True, color=COLORS.get(agent, MUTED), label=label(agent))
+    ax.set_xlabel("held-out episode task return")
+    ax.set_ylabel("density")
+    ax.set_title("Outcome distribution", loc="left")
+    ax.legend(fontsize=7, ncol=2)
+
+    ax = axes[1, 1]
+    x = values[3]
+    y = values[2]
+    for idx, agent in enumerate(agents):
+        ax.scatter(x[idx], y[idx], s=65, color=COLORS.get(agent, MUTED), edgecolor="white", linewidth=0.8)
+        ax.annotate(label(agent), (x[idx], y[idx]), xytext=(5, 4), textcoords="offset points", fontsize=7)
+    ax.set_xlabel("travel ticks / fulfilled order (lower is better)")
+    ax.set_ylabel("express on-time %")
+    ax.set_title("Efficiency vs deadline performance", loc="left")
+
+    fig.suptitle("DockRush results dashboard — nominal scenario", x=0.01, ha="left", fontsize=13, fontweight="bold")
+    save(fig, "e9_results_dashboard.png")
+
+
 # ---------------------------------------------------------------- E1 / E5 tables + bars
 def main_benchmark(scen: dict, lines: list[str]) -> None:
     keys = [("task_return", "Task return"), ("revenue_captured_pct", "Revenue %"), ("on_time_pct", "On-time %"),
@@ -484,6 +542,7 @@ def main() -> None:
     if scen:
         lines.append("\n## E1 / E5 — benchmark across scenarios\n")
         main_benchmark(scen, lines)
+        results_dashboard(scen)
         baselines = {n: scen["nominal"]["agents"][n][0]["summary"] for n in ("edf", "greedy")}
         learning_curves(runs, baselines)
         lines.append("\n## E3 — statistical comparison\n")

@@ -2,13 +2,25 @@
 
 **Deadline-aware warehouse order fulfilment with attention-based PPO.**
 
+[![CI](https://github.com/Mohi1038/rl-warehouse-fulfillment/actions/workflows/ci.yml/badge.svg)](https://github.com/Mohi1038/rl-warehouse-fulfillment/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/tag/Mohi1038/rl-warehouse-fulfillment?label=latest%20tag)](https://github.com/Mohi1038/rl-warehouse-fulfillment/releases)
+[![License](https://img.shields.io/github/license/Mohi1038/rl-warehouse-fulfillment)](https://github.com/Mohi1038/rl-warehouse-fulfillment)
+
 A robot (or a fleet) picks orders that arrive stochastically through a shift and decides
 *which order to work on next* under truck-departure deadlines, a carrying-capacity limit and
 a battery. The decision-maker is a reinforcement-learning agent: PPO with a
 permutation-invariant attention policy, trained in an event-driven semi-MDP simulator.
 Rule-based policies (FIFO, EDF, Greedy) exist only as evaluation baselines.
 
-![PPO-Attention playing one shift](assets/ppo_attn.gif)
+### Watch the policies
+
+| Learned policy | Value-based baseline |
+|---|---|
+| ![PPO-Attention playing one shift](assets/ppo_attn.gif) | ![Greedy baseline playing one shift](assets/greedy.gif) |
+
+The PPO animation includes the attention overlay: brighter purple shelf outlines indicate
+where the policy is currently concentrating its order-selection attention. The Greedy
+animation provides a direct visual baseline for the same warehouse and deadline mechanics.
 
 ## Headline results
 
@@ -48,6 +60,34 @@ shaping term, so it is comparable across agents and ablations. Full tables:
 |---|---|
 | ![benchmark](figures/e1_e5_benchmark.png) | ![learning curves](figures/e2_learning_curves.png) |
 | ![rliable](figures/e3_rliable.png) | ![scaling](figures/e6_scaling.png) |
+
+### Results dashboard
+
+The dashboard combines ranking, metric trade-offs, the held-out return distribution, and
+deadline performance versus travel efficiency in one view:
+
+![results dashboard](figures/e9_results_dashboard.png)
+
+### Visualization gallery
+
+The repository includes a visual explanation of each part of the study:
+
+| Topic | Visualization |
+|---|---|
+| Benchmark ranking and uncertainty | [E1/E5 benchmark](figures/e1_e5_benchmark.png) |
+| Training stability | [Learning curves](figures/e2_learning_curves.png) |
+| Statistical reliability | [rliable analysis](figures/e3_rliable.png) |
+| Out-of-distribution behavior | [Generalisation heatmap](figures/e4_generalisation.png) |
+| Larger queues and rush periods | [Zero-shot scaling](figures/e6_scaling.png) |
+| What components matter | [Ablations](figures/e7_ablations.png) |
+| How the policy behaves | [Behavior analysis](figures/e8_behaviour.png) |
+| Fleet size | [Multi-robot scaling](figures/m11_multi_robot.png) |
+| Small-instance optimality check | [Tiny environment](figures/m5_tiny_env.png) |
+
+Interactive GitHub views are also available from the repository's
+[Actions](https://github.com/Mohi1038/rl-warehouse-fulfillment/actions),
+[commit history](https://github.com/Mohi1038/rl-warehouse-fulfillment/commits/main), and
+[contributor graph](https://github.com/Mohi1038/rl-warehouse-fulfillment/graphs/contributors).
 
 ### Generalisation (E4)
 
