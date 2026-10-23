@@ -361,19 +361,19 @@ rl-warehouse-fulfillment/
 | M11 | Multi-robot (bonus) | 2 robots > 1 robot, coordination visible |
 
 ### Checklist
-- [ ] M1 — layout parser, BFS matrix, NHPP order generator, truck scheduler
-- [ ] M2 — `WarehouseEnv` with Dict obs, action mask, reward terms, `check_env`
-- [ ] M2 — pytest invariants + CI workflow
-- [ ] M3 — pygame renderer, `rgb_array` GIF export
-- [ ] M4 — FIFO / EDF / Greedy / Random baselines, `evaluate.py`
-- [ ] M5 — tiny env + tabular Q-learning
-- [ ] M6 — PPO core (masking, SMDP GAE, vector envs, logging, checkpoints)
-- [ ] M7 — attention encoder + pointer head, hyperparameter tuning
-- [ ] M8 — DQN with dueling, PER, n-step
-- [ ] M9 — curriculum + domain randomisation
-- [ ] M10 — 5-seed sweep, rliable stats, generalisation, scaling, ablations, behaviour plots
-- [ ] M11 — multi-robot extension
-- [ ] Final — pretrained checkpoints, demo GIF, README reproduction steps
+- [x] M1 — layout parser, BFS matrix, NHPP order generator, truck scheduler
+- [x] M2 — `WarehouseEnv` with Dict obs, action mask, reward terms, `check_env`
+- [x] M2 — pytest invariants + CI workflow
+- [x] M3 — pygame renderer, `rgb_array` GIF export
+- [x] M4 — FIFO / EDF / Greedy / Random baselines, `evaluate.py`
+- [x] M5 — tiny env + tabular Q-learning
+- [x] M6 — PPO core (masking, SMDP GAE, vector envs, logging, checkpoints)
+- [x] M7 — attention encoder + pointer head, hyperparameter tuning
+- [x] M8 — DQN with dueling, PER, n-step
+- [x] M9 — curriculum + domain randomisation
+- [x] M10 — 5-seed sweep, rliable stats, generalisation, scaling, ablations, behaviour plots
+- [x] M11 — multi-robot extension
+- [x] Final — commit pretrained checkpoints, demo GIF, and README reproduction steps
 
 ### Suggested timeline (~3 weeks)
 | Days | Milestones |
