@@ -14,7 +14,7 @@ import torch
 
 from warehouse_env import EnvConfig, WarehouseEnv
 
-VAL_SEEDS = tuple(range(50_000, 50_020))
+VAL_SEEDS = tuple(range(50_000, 50_100))
 EVAL_SEEDS = tuple(range(100_000, 100_100))
 
 

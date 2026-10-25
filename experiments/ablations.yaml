@@ -1,4 +1,5 @@
-# Ablations of the main agent (PLAN.md §6, E7). Each entry: name -> dotted overrides on configs/ppo_attn.yaml.
+# Ablations of the original main agent (PLAN.md §6, E7). Each entry: name -> dotted overrides on
+# configs/ppo_attn_smdp.yaml (SMDP discounting), the configuration they were run against.
 # "no_attention" is the PPO-MLP run (configs/ppo_mlp.yaml); "no_dr" isolates domain randomisation (M9).
 no_mask:
   algo_config.use_mask: false
