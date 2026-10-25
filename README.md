@@ -31,7 +31,8 @@ shaping term, so it is comparable across agents and ablations. Full tables:
 
 | Agent (nominal scenario) | Task return | Revenue captured | On-time | Express on-time | Travel / order |
 |---|---|---|---|---|---|
-| **PPO-Attention** | **132.0 ± 9.5** | **60.2%** | **45.2%** | **73.5%** | 40.1 |
+| **PPO-Attention** | **153.0 ± 3.9** | **67.3%** | **52.3%** | **78.3%** | 38.6 |
+| PPO-Attention, original SMDP γ^τ | 132.0 ± 9.5 | 60.2% | 45.2% | 73.5% | 40.1 |
 | DQN (same encoder) | 113.7 ± 4.2 | 58.8% | 44.3% | 66.9% | 39.2 |
 | Greedy (value / distance) | 87.1 | 55.8% | 43.5% | 54.6% | 48.9 |
 | PPO-MLP | 32.5 ± 5.7 | 38.2% | 27.6% | 52.8% | 48.7 |
@@ -41,17 +42,19 @@ shaping term, so it is comparable across agents and ablations. Full tables:
 
 - **PPO-Attention beats EDF and Greedy with a statistically significant margin** in every
   scenario: nominal, both unseen layouts, a 1.5× rush and capacity 4. rliable IQM of the
-  EDF-normalised score (random = 0, EDF = 1) over 5 scenarios: **3.24 [3.19, 3.30]** vs DQN
-  2.98 [2.93, 3.04] and Greedy 2.63. Probability of improvement: P(PPO-Attention > Greedy) =
-  1.00, P(PPO-Attention > DQN) = 0.96 [0.89, 1.00].
-- **Where the gain comes from:** express orders. It gets 73.5% of them on their truck,
-  against 54.6% for Greedy, and needs 18% less travel per fulfilled order. EDF collapses under
+  EDF-normalised score (random = 0, EDF = 1) over 5 scenarios: **3.62 [3.58, 3.66]** vs the
+  original SMDP-discounted agent 3.24 [3.18, 3.30], DQN 2.98 [2.93, 3.04] and Greedy 2.63.
+  Probability of improvement: P(PPO-Attention > Greedy) = P(PPO-Attention > DQN) = 1.00.
+- **Per-decision discounting is the biggest training improvement** (+21 task return, +7 points
+  of revenue over the original agent); see [Improving the agent](#improving-the-agent).
+- **Where the gain comes from:** express orders. It gets 78.3% of them on their truck,
+  against 54.6% for Greedy, and needs 21% less travel per fulfilled order. EDF collapses under
   overload: it chases orders that are already lost, the classic EDF domino effect.
 - **Attention matters.** The same PPO with a slack-sorted MLP reaches only 32.5. The
-  attention policy also transfers to **unseen layouts** (ood_a 135.0 vs Greedy 101.3; ood_b
-  98.3 vs 66.1).
+  attention policy also transfers to **unseen layouts** (ood_a 164.2 vs Greedy 101.3; ood_b
+  126.9 vs 66.1).
 - **Zero-shot scaling.** Trained with 16 order slots, the policy runs unchanged with 24 or
-  32. At 2× the arrival rate, seeing more of the queue lifts it from 74 to 146 task return,
+  32. At 2× the arrival rate, seeing more of the queue lifts it from 112 to 176 task return,
   while Greedy goes from −29 to 18 and EDF stays near −217.
 - **Sanity check.** On the tiny instance, PPO reaches 100% and tabular Q-learning 94% of a
   clairvoyant hindsight-optimal search; the best heuristic reaches 91%.
@@ -94,7 +97,8 @@ Interactive GitHub views are also available from the repository's
 ![generalisation](figures/e4_generalisation.png)
 
 PPO-Attention beats EDF in every cell of the λ ∈ [0.5, 2]× × capacity ∈ [3, 10] grid, well
-outside the training range. **Domain randomisation did not help here:** the agent trained
+outside the training range (grid computed with the original SMDP-discounted agent, the
+configuration `abl_no_dr` was trained against). **Domain randomisation did not help here:** the agent trained
 only on the nominal setting is as good or better across the grid. The observation already
 carries capacity and an arrival-rate estimate, and slack features are normalised, so the
 nominal policy extrapolates on its own.
@@ -103,35 +107,56 @@ nominal policy extrapolates on its own.
 
 ![ablations](figures/e7_ablations.png)
 
-Each variant is trained with 3 seeds at the same 2M-decision budget and compared with seeds
-0–2 of the full agent (125.1 ± 6.6).
+Ablations were run against the **original SMDP-discounted agent**
+([configs/ppo_attn_smdp.yaml](configs/ppo_attn_smdp.yaml)), not the current default. Each
+variant is trained with 3 seeds at the same 2M-decision budget and compared with seeds 0–2 of
+that agent (125.1 ± 6.6).
 
 - **Attention is the biggest single factor** (−89 without it), then the **action mask** (−38:
   without it the policy wastes decisions on invalid actions that fall back to WAIT), then
   **PBRS** (−11).
 - **The curriculum makes no measurable difference** (123.3 ± 13.6) once training reaches the
   nominal level. Removing the battery makes the task easier (149), as expected.
-- **A negative result on SMDP discounting.** Discounting by `γ^τ` is the theoretically
-  correct choice for a semi-MDP, yet replacing it with a per-decision γ scored best
-  (153.7 ± 2.2). Per tick, γ = 0.995 gives a horizon of only ≈200 ticks (≈20 decisions),
+- **SMDP discounting hurt, so the default now uses a per-decision γ.** Discounting by `γ^τ` is
+  the theoretically correct choice for a semi-MDP, yet replacing it with a per-decision γ
+  scored best (153.7 ± 2.2). Per tick, γ = 0.995 gives a horizon of only ≈200 ticks (≈20 decisions),
   while per decision it spans the whole shift. Keeping `γ^τ` but raising γ to 0.9995 per
   tick (a whole-shift horizon) recovers about half the gap (134.9 ± 11.6). So the effective
   horizon explains part of it, and the rest is consistent with the lower variance of a
-  constant per-step discount. The committed models use the plan's configuration; the
-  per-decision variant is one `--set algo_config.smdp_discount=false` away.
+  constant per-step discount.
+
+### Improving the agent
+
+The ablation above led to a retrained main agent. Every variant is scored on the same 100
+validation seeds (used to choose the default) and on the 100 held-out seeds (reported).
+Full tables for all 5 scenarios: [results/variants.md](results/variants.md).
+
+| Variant | seeds | Validation | Held-out task return | Revenue |
+|---|---|---|---|---|
+| Original: SMDP γ^τ, lr 3e-4, 20-episode validation every 25 updates | 5 | 104.7 ± 9.5 | 132.0 ± 9.5 | 60.2% |
+| Per-decision γ | 5 | 135.8 ± 2.0 | 158.1 ± 5.7 | 67.5% |
+| **+ lr 1.5e-4 (annealed), 50-episode validation every 10 updates (default)** | 5 | **140.9 ± 2.2** | 153.0 ± 3.9 | 67.3% |
+| + d_model 128, 3 layers (518k parameters) | 3 | 139.6 ± 4.8 | 151.4 ± 1.2 | 67.2% |
+
+- **The per-decision discount accounts for nearly all of the gain.**
+- **The steadier schedule is a tie on held-out seeds** (it wins 3 of 5 scenarios, all within
+  the confidence intervals). It was adopted because it scores highest on validation and has
+  tighter seed-to-seed spread.
+- **A 5× larger network does not help** at the same budget, consistent with learning curves
+  that plateau early: model size is not the bottleneck.
 
 ### Behaviour (E8)
 
 ![behaviour](figures/e8_behaviour.png)
 
-- **Triage.** The [CLS] token gives express orders 3.1× their uniform attention share.
-  Orders that are already likely to miss their truck (slack < −25 ticks) get 0.91× and
-  are picked next only 3% of the time, against 11% for orders with plenty of slack.
-- **Short trips on purpose.** PPO makes more single-item delivery trips than the heuristics.
-  It loads items onto the dock early to protect deadlines instead of batching, which is
-  where the express on-time gain comes from.
-- **Charging** happens late in the shift, after the midday peak, rather than at a fixed
-  threshold.
+- **Triage.** The [CLS] token gives express orders 2.0× their uniform attention share.
+  Orders that are already likely to miss their truck (slack < −25 ticks) are picked next
+  5% of the time, against 12% for orders with plenty of slack (> 50 ticks).
+- **Batching like the heuristics.** 60% of its delivery trips carry a single item, close to
+  EDF (62%) and Greedy (61%). The original SMDP-discounted agent made 75% single-item trips,
+  loading items early instead of batching.
+- **Charging** is spread across the shift instead of being left until after the midday peak
+  as the original agent did.
 
 ### Multi-robot bonus (M11)
 
@@ -143,7 +168,7 @@ Each variant is trained with 3 seeds at the same 2M-decision budget and compared
 | 2 | **207.1 ± 12.9** | 195.1 | 151.5 |
 | 3 | 218.6 ± 7.7 | 227.5 | 224.3 |
 
-Two robots clearly beat one (+57%), and the shared asynchronous policy beats every heuristic
+These runs use the original SMDP-discounted configuration. Two robots clearly beat one (+57%), and the shared asynchronous policy beats every heuristic
 with one or two robots. With three robots the warehouse is no longer capacity-bound: every
 policy fulfils most orders (PPO 87.5% on-time), and the learned policy is on par with
 (slightly below) the heuristics. Order claiming prevents duplicate work. We did **not** observe
@@ -185,8 +210,9 @@ bash experiments/run_all.sh --quick    # minutes-long smoke test of the same pip
 | **Speed** | ≈18k decisions/s single-core; deterministic under a seed; passes `gymnasium.utils.env_checker`. |
 
 The simulator is **event-driven**: the agent acts only when a robot becomes free, and between
-decisions the clock advances by τ ticks while orders arrive and trucks leave. Learners
-discount each transition by `γ^τ` (a semi-MDP with options). The same simulator runs `K`
+decisions the clock advances by τ ticks while orders arrive and trucks leave (a semi-MDP with
+options). Learners can discount each transition by `γ^τ`; the main PPO agent uses a constant
+per-decision γ, which trained better (see the ablations). The same simulator runs `K`
 robots asynchronously (whichever robot frees up next acts), which powers the multi-robot
 bonus.
 
@@ -197,7 +223,7 @@ Registered ids: `DockRush-v0`, `DockRushTiny-v0`, `DockRushMulti-v0`. Curriculum
 
 | Agent | File | What it is |
 |---|---|---|
-| **PPO-Attention (main)** | `ppo.py`, `ppo_attn.py`, `networks.py` | From-scratch PPO with a masked categorical, SMDP-correct GAE (`δ = r + γ^τ V′ − V`, trace `(γλ)^τ`), return normalisation, value clipping, KL early stop. Encoder: global MLP → [CLS] token, order MLP → tokens, 2-layer Transformer with padding mask; a **pointer head** scores each order slot, a small head scores DELIVER/CHARGE/WAIT. ≈99k parameters. Permutation-equivariant, so it runs with 24 or 32 order slots without retraining. |
+| **PPO-Attention (main)** | `ppo.py`, `ppo_attn.py`, `networks.py` | From-scratch PPO with a masked categorical, per-decision GAE by default (`smdp_discount: true` gives SMDP-correct `δ = r + γ^τ V′ − V`, trace `(γλ)^τ`), return normalisation, value clipping, KL early stop. Encoder: global MLP → [CLS] token, order MLP → tokens, 2-layer Transformer with padding mask; a **pointer head** scores each order slot, a small head scores DELIVER/CHARGE/WAIT. ≈99k parameters. Permutation-equivariant, so it runs with 24 or 32 order slots without retraining. |
 | PPO-MLP | `ppo_mlp.py` | Same PPO, flatten + MLP over slots sorted by slack (an MLP is not permutation invariant). |
 | DQN | `dqn.py` | Double + dueling DQN on the same attention encoder, sum-tree prioritized replay, 3-step returns discounted by `γ^{Στ}`, masked ε-greedy and masked target argmax. |
 | Tabular Q | `q_learning.py` | SMDP Q-learning on the tiny env, checked against a clairvoyant hindsight-optimal search. |
@@ -208,8 +234,9 @@ losses, entropy, KL, explained variance, every reward term and every task metric
 curriculum (`curriculum.py`) promotes through the plan's difficulty levels when the on-time
 rate over 50 episodes exceeds 80% (with a fallback so training always reaches the nominal
 level). Domain randomisation samples λ ∈ [0.6, 1.4]×, capacity ∈ {4…8} and jitter σ ∈ [0, 12]
-per episode across both training layouts. The best checkpoint is selected on 20 validation
-seeds that are disjoint from the 100 held-out evaluation seeds.
+per episode across both training layouts. The best checkpoint is selected on validation seeds
+that are disjoint from the 100 held-out evaluation seeds (50 episodes every 10 updates for the
+main agent, 20 every 25 for the others).
 
 ## Repository layout
 
@@ -218,11 +245,11 @@ warehouse_env/   env.py (event-driven SMDP), layout.py, orders.py, trucks.py, re
                  config.py, render.py (pygame + GIF), tiny_env.py, multi_env.py, layouts/
 agents/          networks.py, ppo.py, ppo_attn.py, ppo_mlp.py, dqn.py, q_learning.py, baselines.py, common.py
 train.py  evaluate.py  curriculum.py
-configs/         base.yaml, ppo_attn.yaml, ppo_mlp.yaml, dqn.yaml, tiny_q.yaml, tiny_ppo.yaml, multi_k{1,2,3}.yaml
-experiments/     run_all.sh / run_all.py (resumable sweep), evaluate_all.py, ablations.yaml
+configs/         base.yaml, ppo_attn.yaml, ppo_attn_smdp.yaml, ppo_mlp.yaml, dqn.yaml, tiny_q.yaml, tiny_ppo.yaml, multi_k{1,2,3}.yaml
+experiments/     run_all.sh / run_all.py (resumable sweep), evaluate_all.py, compare_variants.py, ablations.yaml
 plots/           make_figures.py
 models/          pretrained checkpoints (best_<algo>.pt and every seed of the main algorithms)
-results/         evaluation JSON and tables.md        figures/  all plots        assets/  GIFs
+results/         evaluation JSON, tables.md, variants.md       figures/  all plots        assets/  GIFs
 tests/           env invariants, determinism, generators, layouts, networks, GAE, replay, renderer
 ```
 

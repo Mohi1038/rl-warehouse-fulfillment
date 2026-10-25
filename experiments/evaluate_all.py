@@ -66,7 +66,7 @@ def scenarios(runs: Path, seeds) -> dict:
     for scenario, changes in SCENARIOS.items():
         config = NOMINAL.replace(**changes)
         out[scenario] = {"agents": {}}
-        for algo in ("ppo_attn", "ppo_mlp", "dqn"):
+        for algo in ("ppo_attn", "ppo_attn_smdp", "ppo_mlp", "dqn"):
             out[scenario]["agents"][algo] = [compact(eval_model(d / "best.pt", config, seeds)) for d in seed_dirs(runs, algo)]
         for name in BASELINE_NAMES:
             out[scenario]["agents"][name] = [compact(eval_baseline(name, config, seeds))]
@@ -78,7 +78,8 @@ def generalisation(runs: Path, episodes: int) -> dict:
     lambdas = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
     capacities = [3, 4, 5, 6, 7, 8, 9, 10]
     seeds = EVAL_SEEDS[:episodes]
-    agents = {name: seed_dirs(runs, name) for name in ("ppo_attn", "abl_no_dr")}
+    # with vs without randomisation, both on the SMDP-discounted configuration abl_no_dr was trained against
+    agents = {"ppo_attn": seed_dirs(runs, "ppo_attn_smdp"), "abl_no_dr": seed_dirs(runs, "abl_no_dr")}
     grid: dict = {name: np.zeros((len(lambdas), len(capacities))).tolist() for name in (*agents, "edf", "greedy")}
     for i, lam in enumerate(lambdas):
         for j, cap in enumerate(capacities):
@@ -114,7 +115,7 @@ def scaling(runs: Path, seeds) -> dict:
 
 
 def ablations(runs: Path, seeds) -> dict:
-    variants = {"full": "ppo_attn", "no_attention": "ppo_mlp"}
+    variants = {"full": "ppo_attn_smdp", "no_attention": "ppo_mlp"}  # ablations are of the SMDP-discounted agent
     variants.update({p.name.removeprefix("abl_"): p.name for p in sorted(runs.glob("abl_*"))})
     out = {}
     for label, name in variants.items():

@@ -24,6 +24,7 @@ FIGURES = ROOT / "figures"
 # Colour follows the agent, never its rank (reference categorical palette, fixed order).
 COLORS = {
     "ppo_attn": "#2a78d6",
+    "ppo_attn_smdp": "#86b6ef",
     "ppo_mlp": "#eb6834",
     "dqn": "#1baf7a",
     "edf": "#eda100",
@@ -35,6 +36,7 @@ COLORS = {
 }
 LABELS = {
     "ppo_attn": "PPO-Attention",
+    "ppo_attn_smdp": "PPO-Attention (SMDP γ^τ)",
     "ppo_mlp": "PPO-MLP",
     "dqn": "DQN",
     "edf": "EDF",

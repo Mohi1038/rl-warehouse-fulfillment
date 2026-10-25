@@ -1,6 +1,10 @@
-# MAIN agent: PPO + attention encoder + pointer head (PLAN.md §4.1)
+# MAIN agent: PPO + attention encoder + pointer head (PLAN.md §4.1).
+# Per-decision discount, halved lr (still annealed to 0) and denser, larger validation:
+# see results/variants.md. The original SMDP-discounted agent is configs/ppo_attn_smdp.yaml.
 extends: base.yaml
 name: ppo_attn
+eval_every: 10
+eval_episodes: 50
 algo: ppo_attn
 network:
   d_model: 64
@@ -12,12 +16,13 @@ algo_config:
   n_steps: 256
   epochs: 4
   minibatch_size: 1024
-  lr: 3.0e-4
+  lr: 1.5e-4
   clip_coef: 0.2
   ent_coef_start: 0.02
   ent_coef_end: 0.001
   vf_coef: 0.5
   max_grad_norm: 0.5
   gamma: 0.995
+  smdp_discount: false
   gae_lambda: 0.95
   target_kl: 0.02

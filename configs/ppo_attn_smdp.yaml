@@ -1,0 +1,9 @@
+# Original main agent: SMDP discounting γ^τ, lr 3e-4. Base of the ablations (E7), the
+# generalisation grid (E4) and the multi-robot runs (M11), which were all trained against it.
+extends: ppo_attn.yaml
+name: ppo_attn_smdp
+eval_every: 25
+eval_episodes: 20
+algo_config:
+  lr: 3.0e-4
+  smdp_discount: true

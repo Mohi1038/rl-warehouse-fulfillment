@@ -23,16 +23,17 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 MAIN_ALGOS = ("ppo_attn", "ppo_mlp", "dqn")
+SMDP = "ppo_attn_smdp"  # original main agent; base of the ablations
 
 
 def plan_runs(seeds: list[int], ablation_seeds: list[int], multi_seeds: list[int], quick: bool) -> list[dict]:
     runs = []
-    for algo in MAIN_ALGOS:
+    for algo in (*MAIN_ALGOS, SMDP):
         runs += [{"config": f"configs/{algo}.yaml", "name": algo, "seed": s, "set": []} for s in seeds]
     ablations = yaml.safe_load((ROOT / "experiments/ablations.yaml").read_text())
     for name, overrides in ablations.items():
         sets = [f"{k}={v}" for k, v in overrides.items()]
-        runs += [{"config": "configs/ppo_attn.yaml", "name": f"abl_{name}", "seed": s, "set": sets} for s in ablation_seeds]
+        runs += [{"config": f"configs/{SMDP}.yaml", "name": f"abl_{name}", "seed": s, "set": sets} for s in ablation_seeds]
     for k in (1, 2, 3):
         runs += [{"config": f"configs/multi_k{k}.yaml", "name": f"multi_k{k}", "seed": s, "set": []} for s in multi_seeds]
     runs += [{"config": "configs/tiny_ppo.yaml", "name": "tiny_ppo", "seed": s, "set": []} for s in ablation_seeds]
@@ -68,12 +69,12 @@ def best_validation(run_dir: Path) -> float:
 def publish(out: Path, seeds: list[int]) -> None:
     models = ROOT / "models"
     models.mkdir(exist_ok=True)
-    for name in (*MAIN_ALGOS, "multi_k1", "multi_k2", "multi_k3", "tiny_ppo"):
+    for name in (*MAIN_ALGOS, SMDP, "multi_k1", "multi_k2", "multi_k3", "tiny_ppo"):
         candidates = [out / name / f"s{s}" for s in seeds if (out / name / f"s{s}" / "best.pt").exists()]
         if not candidates:
             continue
         for run_dir in candidates:
-            if name in MAIN_ALGOS:
+            if name in (*MAIN_ALGOS, SMDP):
                 shutil.copy(run_dir / "best.pt", models / f"{name}_{run_dir.name}.pt")
         best = max(candidates, key=best_validation)
         shutil.copy(best / "best.pt", models / f"best_{name}.pt")

@@ -1,5 +1,5 @@
 # Multi-robot bonus (PLAN.md §7): 1 robot(s), shared PPO-attention policy with robot tokens
-extends: ppo_attn.yaml
+extends: ppo_attn_smdp.yaml
 name: multi_k1
 env:
   n_robots: 1
