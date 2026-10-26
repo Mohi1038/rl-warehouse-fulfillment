@@ -1,14 +1,14 @@
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import type { Cell, Episode } from "../data";
-import { WarehouseRenderer, type Overlay } from "../renderer";
+import type { Episode } from "../data";
 import { Replay } from "../sim";
 import { reducedMotion, whileVisible } from "../util";
+import { Warehouse3D, type ViewName } from "../warehouse3d";
 
 // scroll progress through the steps -> simulation tick
 const ANCHORS: [number, number][] = [
   [0, 0],
-  [0.18, 40],
-  [0.38, 200],
+  [0.18, 60],
+  [0.38, 210],
   [0.58, 300],
   [0.76, 380],
   [1, 720],
@@ -27,7 +27,8 @@ export function initWorld(ep: Episode) {
   const section = document.getElementById("world")!;
   const canvas = document.getElementById("world-canvas") as HTMLCanvasElement;
   const replay = new Replay(ep);
-  const renderer = new WarehouseRenderer(canvas, ep.layout);
+  const scene = new Warehouse3D(canvas, ep);
+  scene.setView("overview", true);
   const hud = {
     t: document.getElementById("hud-t")!,
     rev: document.getElementById("hud-rev")!,
@@ -36,18 +37,16 @@ export function initWorld(ep: Episode) {
   };
   document.getElementById("world-final")!.textContent = `${ep.stats.revenue_captured_pct.toFixed(1)}%`;
 
-  let focus = "layout";
   let target = 0;
   let t = 0;
-  const steps = [...section.querySelectorAll<HTMLElement>(".step")];
-  steps.forEach((step) =>
+  section.querySelectorAll<HTMLElement>(".step").forEach((step) =>
     ScrollTrigger.create({
       trigger: step,
       start: "top 60%",
       end: "bottom 40%",
       onToggle: (self) => {
         step.classList.toggle("is-active", self.isActive);
-        if (self.isActive) focus = step.dataset.focus ?? "all";
+        if (self.isActive) scene.setView((step.dataset.focus ?? "all") as ViewName);
       },
     }),
   );
@@ -58,30 +57,15 @@ export function initWorld(ep: Episode) {
     onUpdate: (self) => (target = tickAt(self.progress)),
   });
 
-  const { layout } = ep;
-  const docks: Cell[] = layout.docks;
-  const dockAndTruck: Cell[] = docks.map(([r, c]) => [r + 0.8, c + 0.4]);
-
-  const frame = () => {
-    t += (target - t) * (reducedMotion ? 1 : 0.12);
+  whileVisible(canvas, (dt) => {
+    t += (target - t) * (reducedMotion ? 1 : 0.1);
+    // snap when close, so the end-of-shift trucks (which leave at exactly tick 720) are counted
+    if (Math.abs(target - t) < 0.3) t = target;
     const world = replay.state(t);
-    const overlay: Overlay = {};
-    if (focus === "layout") {
-      overlay.spotlight = [...docks, ...(layout.charger ? [layout.charger] : []), layout.packing];
-      overlay.spotlightRadius = 1.3;
-    } else if (focus === "trucks") {
-      overlay.spotlight = dockAndTruck;
-      overlay.spotlightRadius = 1.75;
-    } else if (focus === "robot") {
-      const r = world.robots[0];
-      overlay.spotlight = [[r.y, r.x]];
-      overlay.spotlightRadius = 2.4;
-    }
-    renderer.draw(world, overlay);
+    scene.frame(world, dt);
     hud.t.textContent = String(Math.floor(t)).padStart(3, "0");
     hud.rev.textContent = `${(world.arrived ? (100 * world.captured) / world.arrived : 0).toFixed(1)}%`;
     hud.ful.textContent = String(world.fulfilled);
     hud.lost.textContent = String(world.lost);
-  };
-  whileVisible(canvas, frame);
+  });
 }

@@ -287,9 +287,9 @@ tests/           env invariants, determinism, generators, layouts, networks, GAE
 
 ## Website
 
-`site/` is a Vite + TypeScript site (GSAP ScrollTrigger, Lenis, D3) that explains the project
-step by step: the warehouse, demand, the attention policy, discounting, a PPO vs baseline race,
-look-ahead and the fleet. Its animations replay real episodes from held-out seed 100026,
+`site/` is a Vite + TypeScript site (Three.js, GSAP ScrollTrigger, Lenis, D3) that explains the
+project step by step: the warehouse in 3D, demand, the attention policy, discounting, a PPO vs
+baseline race, look-ahead and the fleet. Its animations replay real episodes from held-out seed 100026,
 exported by [experiments/export_site_data.py](experiments/export_site_data.py) into
 `site/public/data/`.
 

@@ -94,7 +94,7 @@ export function initResults(summary: Summary) {
     .attr("x", m.left - 12)
     .attr("y", y.bandwidth() / 2 + 4)
     .attr("text-anchor", "end")
-    .attr("fill", (r) => (r.ours ? "#f0efec" : "#c3c2b7"))
+    .attr("fill", (r) => (r.ours ? "#ededed" : "#a3a3a0"))
     .text((r) => r.name);
   const bars = g
     .append("rect")
@@ -102,8 +102,8 @@ export function initResults(summary: Summary) {
     .attr("height", y.bandwidth())
     .attr("rx", 4)
     .attr("width", 0)
-    .attr("fill", (r) => (r.ours ? "#9085e9" : "rgba(195,194,183,0.32)"))
-    .style("filter", (r) => (r.ours ? "drop-shadow(0 0 12px rgba(144,133,233,0.55))" : "none"));
+    .attr("fill", (r) => (r.ours ? "#ededed" : "rgba(237,237,237,0.16)"))
+    .style("filter", (r) => (r.ours ? "drop-shadow(0 0 14px rgba(237,237,237,0.35))" : "none"));
   const values = g
     .append("text")
     .attr("class", "chart-value")
@@ -117,7 +117,7 @@ export function initResults(summary: Summary) {
     .attr("fill", "transparent")
     .on("mousemove", (e: MouseEvent, r) =>
       showTip(
-        `${r.name}<br>revenue ${r.revenue.toFixed(1)}% · task return ${r.taskReturn.toFixed(1)}<br>express on time ${r.express.toFixed(1)}%${r.note ? `<br><span style="color:#898781">${r.note}</span>` : ""}`,
+        `${r.name}<br>revenue ${r.revenue.toFixed(1)}% · task return ${r.taskReturn.toFixed(1)}<br>express on time ${r.express.toFixed(1)}%${r.note ? `<br><span style="opacity:.6">${r.note}</span>` : ""}`,
         e.clientX,
         e.clientY,
       ),

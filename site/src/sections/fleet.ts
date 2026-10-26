@@ -1,30 +1,31 @@
 import * as d3 from "d3";
 import { gsap } from "gsap";
 import type { Episode, Summary } from "../data";
-import { WarehouseRenderer } from "../renderer";
 import { Replay } from "../sim";
+import { Warehouse3D } from "../warehouse3d";
 import { hideTip, reducedMotion, showTip, whileVisible } from "../util";
 
 const SERIES: [string, string, string][] = [
-  ["ppo_attn", "PPO-Attention (shared)", "#9085e9"],
-  ["greedy", "Greedy", "#c3c2b7"],
-  ["edf", "EDF", "#5a5953"],
+  ["ppo_attn", "PPO-Attention (shared)", "#ededed"],
+  ["greedy", "Greedy", "#6b6b68"],
+  ["edf", "EDF", "#4a4a47"],
 ];
 
 export function initFleet(ep: Episode, summary: Summary) {
   const canvas = document.getElementById("fleet-canvas") as HTMLCanvasElement;
   const replay = new Replay(ep);
-  const renderer = new WarehouseRenderer(canvas, ep.layout);
+  const scene = new Warehouse3D(canvas, ep);
+  scene.setView("fleet", true);
   document.getElementById("fleet-pct")!.textContent = `${ep.stats.revenue_captured_pct.toFixed(1)}%`;
   const start = 100; // skip the quiet first ticks before orders arrive
   let t = start;
-  if (reducedMotion) renderer.draw(replay.state(360), { robotLabels: true });
-  else
-    whileVisible(canvas, (dt) => {
-      t += dt * 30;
+  whileVisible(canvas, (dt) => {
+    if (!reducedMotion) {
+      t += dt * 26;
       if (t > replay.horizon + 30) t = start;
-      renderer.draw(replay.state(Math.min(t, replay.horizon)), { robotLabels: true });
-    });
+    }
+    scene.frame(replay.state(reducedMotion ? 360 : Math.min(t, replay.horizon)), reducedMotion ? 0 : dt);
+  });
 
   // task return by fleet size
   const fig = document.getElementById("fleet-chart")!;

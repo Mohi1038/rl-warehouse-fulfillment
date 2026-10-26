@@ -3,6 +3,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { loadEpisode, loadSummary } from "./data";
+import { initCounters, initCursor, initMagnetic, initMarquee, initReveals, initStepFades, runLoader } from "./fx";
 import { initAgent } from "./sections/agent";
 import { initArrivals } from "./sections/arrivals";
 import { initDuel } from "./sections/duel";
@@ -18,18 +19,19 @@ gsap.registerPlugin(ScrollTrigger);
 
 function smoothScroll() {
   if (reducedMotion) return;
-  const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 1 });
+  const lenis = new Lenis({ lerp: 0.085 });
   lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add((time) => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
-  document.querySelector(".rail")!.addEventListener("click", (e) => {
-    const a = (e.target as HTMLElement).closest("a");
+  document.addEventListener("click", (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#"]');
     if (!a) return;
     e.preventDefault();
-    lenis.scrollTo(a.getAttribute("href")!, { duration: 1.6 });
+    lenis.scrollTo(a.getAttribute("href")!, { duration: 1.8 });
   });
 }
 
+/** Chapter rail and the bottom progress line. */
 function chrome() {
   const rail = document.querySelector(".rail")!;
   const sections = [...document.querySelectorAll<HTMLElement>("[data-label]")];
@@ -48,39 +50,22 @@ function chrome() {
     ease: "none",
     scrollTrigger: { trigger: document.body, start: "top top", end: "bottom bottom", scrub: 0.3 },
   });
-  if (reducedMotion) return;
-  document.querySelectorAll<HTMLElement>("main [data-reveal]").forEach((el) =>
-    gsap.from(el, {
-      y: 50,
-      opacity: 0,
-      duration: 1.2,
-      ease: "expo.out",
-      scrollTrigger: { trigger: el, start: "top 88%" },
-    }),
-  );
-  document.querySelectorAll<HTMLElement>(".limits > div, .callouts > div").forEach((el, i) =>
-    gsap.from(el, {
-      y: 40,
-      opacity: 0,
-      rotateX: -15,
-      duration: 1,
-      delay: (i % 4) * 0.08,
-      ease: "expo.out",
-      scrollTrigger: { trigger: el, start: "top 90%" },
-    }),
-  );
 }
 
 async function main() {
-  const [summary, ppo, greedy, edf, fleet, lookahead] = await Promise.all([
-    loadSummary(),
-    loadEpisode("ppo"),
-    loadEpisode("greedy"),
-    loadEpisode("edf"),
-    loadEpisode("fleet"),
-    loadEpisode("lookahead"),
-  ]);
+  window.scrollTo(0, 0);
+  const loads = [loadSummary(), loadEpisode("ppo"), loadEpisode("greedy"), loadEpisode("edf"), loadEpisode("fleet"), loadEpisode("lookahead")] as const;
+  const fonts = document.fonts.ready;
+  const revealed = runLoader([...loads, fonts]);
+  const [summary, ppo, greedy, edf, fleet, lookahead] = await Promise.all(loads);
+  await fonts;
   smoothScroll();
+  initReveals();
+  initStepFades();
+  initCounters();
+  initCursor();
+  initMagnetic();
+  initMarquee();
   initHero(ppo);
   initWorld(ppo);
   initArrivals(ppo);
@@ -91,10 +76,13 @@ async function main() {
   initFleet(fleet, summary);
   initResults(summary);
   chrome();
+  await revealed;
   ScrollTrigger.refresh();
 }
 
 main().catch((err) => {
   console.error(err);
-  document.body.insertAdjacentHTML("beforeend", `<p style="padding:24px">Could not load the episode data: ${String(err)}</p>`);
+  document.getElementById("loader")?.remove();
+  document.body.classList.remove("is-loading");
+  document.body.insertAdjacentHTML("beforeend", `<p style="padding:24px">Could not load the replay data: ${String(err)}</p>`);
 });
