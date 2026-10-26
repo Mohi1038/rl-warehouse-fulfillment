@@ -151,9 +151,9 @@ with 54.6\% for Greedy. The attention policy also transfers from 16 training slo
 attention reduces task return by about 89 points and removing the action mask by about 38
 points, supporting the importance of set-based order selection and feasibility-aware decisions.
 
-The ablations also found that a per-decision discount trains best. Retraining with it
-raised task return from $132.0\pm9.5$ to $153.0\pm3.9$ and revenue from 60.2\% to
-67.3\%, in every scenario; a $5\times$ larger network did not help further.
+A per-decision discount raised task return from $132.0\pm9.5$ to $153.0\pm3.9$ and revenue
+from 60.2\% to 67.3\%; a $5\times$ larger network did not help. Look-ahead over 32 sampled
+futures lifts the best checkpoint from 66.4\% to 71.0\% revenue (${\approx}3$\,s/decision).
 
 The project also tests an applied multi-robot extension with a shared policy and order
 claiming, trained with the original discounting. Two robots reach $207.1\pm12.9$ task return versus $131.6\pm10.9$ for one

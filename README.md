@@ -47,6 +47,9 @@ shaping term, so it is comparable across agents and ablations. Full tables:
   Probability of improvement: P(PPO-Attention > Greedy) = P(PPO-Attention > DQN) = 1.00.
 - **Per-decision discounting is the biggest training improvement** (+21 task return, +7 points
   of revenue over the original agent); see [Improving the agent](#improving-the-agent).
+- **Decision-time look-ahead lifts revenue past 70%.** Adding a planner over sampled futures to
+  the same PPO checkpoint raises revenue captured from 66.4% to **71.0%**; see
+  [Decision-time look-ahead](#decision-time-look-ahead).
 - **Where the gain comes from:** express orders. It gets 78.3% of them on their truck,
   against 54.6% for Greedy, and needs 21% less travel per fulfilled order. EDF collapses under
   overload: it chases orders that are already lost, the classic EDF domino effect.
@@ -144,6 +147,31 @@ Full tables for all 5 scenarios: [results/variants.md](results/variants.md).
   tighter seed-to-seed spread.
 - **A 5× larger network does not help** at the same budget, consistent with learning curves
   that plateau early: model size is not the bottleneck.
+
+### Decision-time look-ahead
+
+[experiments/lookahead.py](experiments/lookahead.py) adds planning on top of the trained policy,
+without any knowledge of the future. At each decision it simulates every valid action on K = 32
+sampled futures and finishes each simulation with PPO. Orders that have not arrived yet and the
+hidden departure jitter of trucks still at the dock are redrawn; everything the agent can observe
+is kept. It executes the action with the highest mean revenue. All actions are scored on the
+same samples.
+
+| Best checkpoint, 100 held-out seeds | Revenue | Task return | On-time | Express on-time |
+|---|---|---|---|---|
+| PPO-Attention | 66.4% | 147.5 | 51.7% | 77.2% |
+| **PPO-Attention + look-ahead** | **71.0% ± 2.5** | **164.4** | **54.6%** | 73.8% |
+| Paired change | +4.6 ± 1.7 | +17.0 ± 13.4 | +2.9 ± 2.0 | −3.4 ± 3.8 |
+
+- **The revenue gain is clear** and look-ahead does better on 72 of the 100 seeds.
+- **Express on-time slips slightly** (within the noise): the planner maximises raw revenue,
+  while PPO was trained on a reward that weights express orders 1.5×.
+- **It costs compute:** about 3 s per decision on 10 cores, against milliseconds for PPO alone.
+  This is PPO plus decision-time planning, not a faster policy.
+- **Knowing the future is worth more:** on the first 20 seeds the same look-ahead given the true
+  future reaches 72.0%, against 63.9% with sampled futures and 58.5% for PPO alone.
+
+Per-episode results: [results/lookahead_ppo_k32.json](results/lookahead_ppo_k32.json).
 
 ### Behaviour (E8)
 
@@ -246,7 +274,7 @@ warehouse_env/   env.py (event-driven SMDP), layout.py, orders.py, trucks.py, re
 agents/          networks.py, ppo.py, ppo_attn.py, ppo_mlp.py, dqn.py, q_learning.py, baselines.py, common.py
 train.py  evaluate.py  curriculum.py
 configs/         base.yaml, ppo_attn.yaml, ppo_attn_smdp.yaml, ppo_mlp.yaml, dqn.yaml, tiny_q.yaml, tiny_ppo.yaml, multi_k{1,2,3}.yaml
-experiments/     run_all.sh / run_all.py (resumable sweep), evaluate_all.py, compare_variants.py, ablations.yaml
+experiments/     run_all.sh / run_all.py (resumable sweep), evaluate_all.py, compare_variants.py, lookahead.py, ablations.yaml
 plots/           make_figures.py
 models/          pretrained checkpoints (best_<algo>.pt and every seed of the main algorithms)
 results/         evaluation JSON, tables.md, variants.md       figures/  all plots        assets/  GIFs
