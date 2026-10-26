@@ -30,7 +30,7 @@ function pickSnapshot(ep: Episode): Snapshot {
   const byId = new Map(ep.orders.map((o) => [o.id, o]));
   const orders = Object.keys(best.w)
     .map((id) => byId.get(Number(id))!)
-    .sort((a, b) => (best.w[String(b.id)] ?? 0) - (best.w[String(a.id)] ?? 0));
+    .sort((a, b) => a.id - b.id);
   return { t: best.t, weights: best.w, chosen: picks.get(best.t) ?? null, orders };
 }
 
@@ -102,13 +102,15 @@ export function initAgent(ep: Episode) {
     const n = cards.length;
     if (p === "cards") {
       const cols = W < 600 ? 2 : 3;
-      const gapX = Math.min(220, (W * 0.9) / cols);
+      const gap = 14;
+      const ch = cards[0]?.el.offsetHeight ?? 96;
       const rows = Math.ceil(n / cols);
-      const gapY = Math.min(130, (H * 0.9) / rows);
+      const gridW = cols * cw + (cols - 1) * gap;
+      const gridH = rows * ch + (rows - 1) * gap;
       return cards.map((_, i) => ({
-        x: (i % cols) * gapX + (W * 0.9 - gapX * cols) / 2 + 10,
-        y: Math.floor(i / cols) * gapY + (H - gapY * rows) / 2,
-        rotation: ((i * 37) % 9) - 4,
+        x: (W - gridW) / 2 + (i % cols) * (cw + gap),
+        y: (H - gridH) / 2 + Math.floor(i / cols) * (ch + gap),
+        rotation: 0,
       }));
     }
     const rowH = Math.min(58, (H * 0.92) / n);
@@ -124,7 +126,7 @@ export function initAgent(ep: Episode) {
     const cx = W * 0.66;
     const cy = H / 2;
     const ns = "http://www.w3.org/2000/svg";
-    cards.forEach(({ el, order, w }) => {
+    cards.forEach(({ el, w }) => {
       const x = (gsap.getProperty(el, "x") as number) + el.offsetWidth;
       const y = (gsap.getProperty(el, "y") as number) + el.offsetHeight / 2;
       const k = w / maxW;
@@ -132,9 +134,9 @@ export function initAgent(ep: Episode) {
       const midX = (x + cx) / 2;
       path.setAttribute("d", `M${x},${y} C${midX},${y} ${midX},${cy} ${cx - 46},${cy}`);
       path.setAttribute("fill", "none");
-      path.setAttribute("stroke", TIER[order.tier]);
+      path.setAttribute("stroke", "#ededed");
       path.setAttribute("stroke-width", String(0.8 + 9 * k));
-      path.setAttribute("stroke-opacity", String(0.18 + 0.75 * k));
+      path.setAttribute("stroke-opacity", String(0.12 + 0.8 * k));
       path.setAttribute("stroke-linecap", "round");
       beams.appendChild(path);
       const len = path.getTotalLength();
@@ -172,7 +174,7 @@ export function initAgent(ep: Episode) {
   const apply = (p: Phase, animate = true) => {
     phase = p;
     const pos = layoutFor(p);
-    const dur = animate && !reducedMotion ? 1.0 : 0;
+    const dur = animate && !reducedMotion ? 1.5 : 0;
     // a fast scroll can fire several phases at once: each one cancels the last
     pendingBeams?.kill();
     gsap.killTweensOf([cls, actions, ...cards.map((c) => c.el), ...cards.map((c) => c.el.querySelector(".feats"))]);

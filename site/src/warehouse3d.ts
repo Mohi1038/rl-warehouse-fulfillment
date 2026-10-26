@@ -131,7 +131,7 @@ export class Warehouse3D {
     sc.bottom = -14;
     key.shadow.bias = -0.0005;
     scene.add(key);
-    const rim = new THREE.DirectionalLight("#9085e9", 0.5);
+    const rim = new THREE.DirectionalLight("#9aa0ad", 0.35);
     rim.position.set(12, 6, -10);
     scene.add(rim);
 
@@ -355,9 +355,9 @@ export class Warehouse3D {
   /** Advance one frame: apply ``world`` and render. */
   frame(world: WorldState, dt: number) {
     this.time += dt;
-    if (this.view === "hero") this.orbit += dt * 0.06;
+    if (this.view === "hero") this.orbit += dt * 0.025;
     this.updateGoal(world);
-    const ease = 1 - Math.pow(0.0015, dt);
+    const ease = 1 - Math.pow(0.04, dt); // slow, cinematic camera moves
     this.camPos.lerp(this.goalPos, ease);
     this.camLook.lerp(this.goalLook, ease);
     this.camera.position.copy(this.camPos).add(new THREE.Vector3(this.mouse.x * 0.8, -this.mouse.y * 0.5, 0));
@@ -368,7 +368,7 @@ export class Warehouse3D {
       const r = this.robots[i];
       if (!r) return;
       const p = this.at(rs.y, rs.x);
-      r.group.position.set(p.x, rs.moving ? Math.abs(Math.sin(this.time * 9)) * 0.04 : 0, p.z);
+      r.group.position.set(p.x, rs.moving ? Math.abs(Math.sin(this.time * 5)) * 0.03 : 0, p.z);
       r.group.rotation.y = -rs.heading;
       const flicker = rs.kind === "charge" && !rs.moving ? 0.6 + 0.4 * Math.sin(this.time * 10) : 1;
       r.light.intensity = 9 * flicker * (0.5 + 0.5 * rs.battery);

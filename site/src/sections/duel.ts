@@ -3,7 +3,7 @@ import { WarehouseRenderer } from "../renderer";
 import { Replay } from "../sim";
 import { reducedMotion, whileVisible } from "../util";
 
-const DURATION = 26; // seconds for a full shift
+const DURATION = 56; // seconds for a full shift
 const HOLD = 3; // seconds paused on the final score
 const START = 100; // tick the replay starts from
 
@@ -29,7 +29,7 @@ export function initDuel(ppo: Episode, opponents: Record<string, Episode>) {
     const sa = a.state(t);
     const sb = b.state(t);
     ra.draw(sa, { countdowns: true });
-    rb.draw(sb, { countdowns: true, robotColors: ["#c3c2b7"] });
+    rb.draw(sb, { countdowns: true, robotColors: ["#7c7c79"] });
     outA.textContent = `${pct(a, t).toFixed(1)}%`;
     outB.textContent = `${pct(b, t).toFixed(1)}%`;
     bar.style.transform = `scaleX(${t / a.horizon})`;

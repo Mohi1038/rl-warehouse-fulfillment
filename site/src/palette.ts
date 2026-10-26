@@ -8,8 +8,8 @@ export const MUTED = "#6b6b68";
 
 /** Express, Standard, Bulk (indexed by tier). */
 export const TIER = ["#d95926", "#3987e5", "#199e70"] as const;
-/** Robot 1, 2, 3. */
-export const ROBOT = ["#9085e9", "#c98500", "#d55181"] as const;
+/** Robot 1 (and the single robot), 2, 3. Neutral white for R1, amber and pink for the fleet. */
+export const ROBOT = ["#ededed", "#c98500", "#d55181"] as const;
 
 export const FLOOR = "#0d0d0e";
 export const SHELF_TOP = "#1b1b1e";

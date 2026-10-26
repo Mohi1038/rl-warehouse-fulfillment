@@ -21,7 +21,7 @@ export function initFleet(ep: Episode, summary: Summary) {
   let t = start;
   whileVisible(canvas, (dt) => {
     if (!reducedMotion) {
-      t += dt * 26;
+      t += dt * 11;
       if (t > replay.horizon + 30) t = start;
     }
     scene.frame(replay.state(reducedMotion ? 360 : Math.min(t, replay.horizon)), reducedMotion ? 0 : dt);

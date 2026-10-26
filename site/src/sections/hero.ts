@@ -10,7 +10,7 @@ export function initHero(ep: Episode) {
   const scene = new Warehouse3D(canvas, ep);
   scene.setView("hero", true);
   let t = 150;
-  const speed = 22; // ticks per second
+  const speed = 9; // ticks per second
   whileVisible(canvas, (dt) => {
     if (!reducedMotion) {
       t += dt * speed;

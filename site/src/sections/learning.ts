@@ -4,7 +4,7 @@ import type { Episode, Summary } from "../data";
 import { MUTED } from "../palette";
 import { hideTip, reducedMotion, showTip } from "../util";
 
-const NEW = "#9085e9";
+const NEW = "#ededed";
 const GAMMA = 0.995;
 const N = 64;
 

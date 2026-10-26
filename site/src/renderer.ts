@@ -155,7 +155,7 @@ export class WarehouseRenderer {
       g.stroke();
       g.restore();
       g.fillStyle = rgba(INK2, 0.75);
-      g.font = `600 ${Math.max(8, s * 0.36)}px "JetBrains Mono", monospace`;
+      g.font = `600 ${Math.max(8, s * 0.36)}px "Geist Mono", monospace`;
       g.textAlign = "center";
       g.textBaseline = "middle";
       g.fillText(`D${d + 1}`, x, y);
@@ -318,7 +318,7 @@ export class WarehouseRenderer {
       g.save();
       g.globalAlpha = Math.max(0, alpha);
       g.textAlign = "center";
-      g.font = `700 ${Math.max(10, s * 0.55)}px "JetBrains Mono", monospace`;
+      g.font = `700 ${Math.max(10, s * 0.55)}px "Geist Mono", monospace`;
       if (pop.kind === "fulfilled") {
         g.fillStyle = INK;
         g.shadowColor = TIER[pop.order.tier];
@@ -326,7 +326,7 @@ export class WarehouseRenderer {
         g.fillText(`+${pop.order.captured.toFixed(1)}`, x, y - rise);
       } else if (pop.kind === "lost") {
         g.fillStyle = TIER[0];
-        g.fillText("✕ lost", x, y - rise);
+        g.fillText("✕ missed", x, y - rise);
       } else {
         g.fillStyle = INK2;
         g.fillText("½ deferred", x, y - rise);
@@ -391,7 +391,7 @@ export class WarehouseRenderer {
         g.stroke();
       }
       g.fillStyle = rgba(INK, 0.85);
-      g.font = `600 ${Math.max(8, s * 0.32)}px "JetBrains Mono", monospace`;
+      g.font = `600 ${Math.max(8, s * 0.32)}px "Geist Mono", monospace`;
       g.textAlign = "center";
       g.textBaseline = "middle";
       const label = ts.truck.final ? "LAST" : ts.countdown > 0 ? `${Math.ceil(ts.countdown)}` : "GO";
@@ -472,7 +472,7 @@ export class WarehouseRenderer {
     });
     if (label) {
       g.fillStyle = INK;
-      g.font = `700 ${Math.max(8, s * 0.3)}px "JetBrains Mono", monospace`;
+      g.font = `700 ${Math.max(8, s * 0.3)}px "Geist Mono", monospace`;
       g.textAlign = "center";
       g.textBaseline = "middle";
       g.fillText(`R${robot.id + 1}`, 0, -size * 1.05);

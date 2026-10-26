@@ -22,8 +22,8 @@ export function initArrivals(ep: Episode) {
   const svg = d3.select(fig).append("svg").attr("viewBox", `0 0 ${width} ${height}`).attr("role", "img");
   const defs = svg.append("defs");
   const grad = defs.append("linearGradient").attr("id", "rate-grad").attr("x1", 0).attr("x2", 0).attr("y1", 0).attr("y2", 1);
-  grad.append("stop").attr("offset", "0%").attr("stop-color", "#9085e9").attr("stop-opacity", 0.35);
-  grad.append("stop").attr("offset", "100%").attr("stop-color", "#9085e9").attr("stop-opacity", 0);
+  grad.append("stop").attr("offset", "0%").attr("stop-color", "#ededed").attr("stop-opacity", 0.35);
+  grad.append("stop").attr("offset", "100%").attr("stop-color", "#ededed").attr("stop-opacity", 0);
   const clip = defs.append("clipPath").attr("id", "rate-clip").append("rect").attr("x", 0).attr("y", 0).attr("height", height).attr("width", 0);
 
   svg
@@ -65,7 +65,7 @@ export function initArrivals(ep: Episode) {
     .y((d) => y(d[1]))
     .curve(d3.curveCatmullRom);
   body.append("path").datum(ep.rate).attr("d", area).attr("fill", "url(#rate-grad)");
-  body.append("path").datum(ep.rate).attr("d", line).attr("fill", "none").attr("stroke", "#9085e9").attr("stroke-width", 2);
+  body.append("path").datum(ep.rate).attr("d", line).attr("fill", "none").attr("stroke", "#ededed").attr("stroke-width", 2);
 
   const r = d3
     .scaleSqrt()

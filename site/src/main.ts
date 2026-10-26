@@ -19,7 +19,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 function smoothScroll() {
   if (reducedMotion) return;
-  const lenis = new Lenis({ lerp: 0.085 });
+  const lenis = new Lenis({ lerp: 0.06 });
   lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add((time) => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);

@@ -58,7 +58,7 @@ export function initWorld(ep: Episode) {
   });
 
   whileVisible(canvas, (dt) => {
-    t += (target - t) * (reducedMotion ? 1 : 0.1);
+    t += (target - t) * (reducedMotion ? 1 : 0.05);
     // snap when close, so the end-of-shift trucks (which leave at exactly tick 720) are counted
     if (Math.abs(target - t) < 0.3) t = target;
     const world = replay.state(t);
