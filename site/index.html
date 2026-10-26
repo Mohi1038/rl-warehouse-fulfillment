@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DockRush — learning to beat the truck</title>
+    <meta
+      name="description"
+      content="An attention-based reinforcement-learning agent that decides which warehouse order to pick next before the trucks leave. Every animation replays the real simulator."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='6' y='6' width='20' height='20' rx='6' fill='%230b0d12' stroke='%239085e9' stroke-width='3'/><circle cx='19' cy='16' r='3' fill='%239085e9'/></svg>" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="progress" aria-hidden="true"><span></span></div>
+    <nav class="rail" aria-label="Sections"></nav>
+
+    <!-- 0 — HERO -->
+    <header id="hero" class="hero" data-label="Start">
+      <div class="hero-stage" aria-hidden="true">
+        <canvas id="hero-canvas"></canvas>
+      </div>
+      <div class="hero-veil" aria-hidden="true"></div>
+      <div class="hero-copy">
+        <p class="eyebrow">Reinforcement learning · warehouse fulfilment</p>
+        <h1 class="title" aria-label="DockRush"><span data-split>DockRush</span></h1>
+        <p class="lede" data-reveal>
+          One robot. Orders that never stop arriving. Trucks that leave whether you are ready or not.
+          An attention-based agent learns <em>which order to pick next</em> — and you are about to watch it do it.
+        </p>
+        <div class="hero-stats">
+          <div class="stat"><b data-count="67.3" data-suffix="%">0</b><span>revenue captured by the policy</span></div>
+          <div class="stat"><b data-count="71.0" data-suffix="%">0</b><span>with decision-time look-ahead</span></div>
+          <div class="stat"><b data-count="78.3" data-suffix="%">0</b><span>express orders on their truck</span></div>
+        </div>
+        <p class="footnote">Every animation on this page replays the real simulator and the trained policy.</p>
+      </div>
+      <div class="scroll-cue" aria-hidden="true"><span></span>Scroll</div>
+    </header>
+
+    <main>
+      <!-- 1 — THE WORLD (pinned scrollytelling) -->
+      <section id="world" class="scrolly" data-label="The shift">
+        <div class="scrolly-sticky">
+          <div class="stage">
+            <canvas id="world-canvas" role="img" aria-label="Replay of one 720-tick shift: the robot picks glowing orders from shelves and loads them onto trucks at three docks."></canvas>
+            <div class="hud">
+              <div><small>Tick</small><b id="hud-t">000</b><i>/ 720</i></div>
+              <div><small>Revenue captured</small><b id="hud-rev">0.0%</b></div>
+              <div><small>Fulfilled</small><b id="hud-ful">0</b></div>
+              <div><small>Lost</small><b id="hud-lost">0</b></div>
+            </div>
+            <div class="legend">
+              <span><i style="--c: var(--tier-0)"></i>Express</span>
+              <span><i style="--c: var(--tier-1)"></i>Standard</span>
+              <span><i style="--c: var(--tier-2)"></i>Bulk</span>
+            </div>
+          </div>
+        </div>
+        <div class="steps">
+          <article class="step" data-focus="layout">
+            <span class="kicker">01 · The floor</span>
+            <h2>A 21 × 15 warehouse</h2>
+            <p>Shelves are obstacles you pick from the aisle beside them. Three docks sit along the bottom wall, a charger in the corner. One tick is one cell of travel; a shift lasts 720 ticks.</p>
+          </article>
+          <article class="step" data-focus="orders">
+            <span class="kicker">02 · Orders</span>
+            <h2>Demand arrives in waves</h2>
+            <p>Orders arrive by a non-homogeneous Poisson process: a quiet start, a midday peak and one random rush. Each holds 1–3 items on “hot” shelves. <b class="t0">Express</b> orders are worth about 3× <b class="t2">bulk</b>; rare VIP orders (★) are worth 5× with tight deadlines.</p>
+          </article>
+          <article class="step" data-focus="trucks">
+            <span class="kicker">03 · Trucks</span>
+            <h2>Trucks don’t wait</h2>
+            <p>Every dock has a truck leaving every 120–180 ticks. The ring is its countdown — but the real departure is jittered and <em>hidden</em> from the agent. Miss it and an express order is lost; standard and bulk orders move to the next truck at half value.</p>
+          </article>
+          <article class="step" data-focus="robot">
+            <span class="kicker">04 · The robot</span>
+            <h2>Capacity, battery, one decision at a time</h2>
+            <p>The robot carries 6 weight units, drains its battery as it moves (the ring around it) and must keep enough charge to reach the charger. It is only asked what to do when it becomes free.</p>
+          </article>
+          <article class="step" data-focus="all">
+            <span class="kicker">05 · The whole shift</span>
+            <h2>Scroll to run the clock</h2>
+            <p>This is the trained policy on held-out seed 100026 — a typical shift, not a hand-picked one. It ends with <b id="world-final">65.9%</b> of the revenue captured, against 56.7% for the Greedy baseline on the same seed.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- 2 — ARRIVALS -->
+      <section id="arrivals" class="panel" data-label="Demand">
+        <div class="panel-copy">
+          <span class="kicker">The pressure</span>
+          <h2 data-reveal>Why one robot can’t serve everyone</h2>
+          <p data-reveal>The line is the arrival rate λ(t) for this shift; each dot is a real order, coloured by tier and sized by value. At the peak, orders arrive faster than one robot can travel between shelves and docks — so the job is <em>triage</em>: deciding what to let go.</p>
+        </div>
+        <figure class="chart" id="arrivals-chart" aria-label="Arrival rate over the shift with each order plotted"></figure>
+      </section>
+
+      <!-- 3 — HOW THE AGENT SEES (pinned) -->
+      <section id="agent" class="scrolly" data-label="The agent">
+        <div class="scrolly-sticky">
+          <div class="agent-stage" id="agent-stage">
+            <div class="agent-cards" id="agent-cards"></div>
+            <svg class="agent-beams" id="agent-beams" aria-hidden="true"></svg>
+            <div class="cls" id="agent-cls"><span>CLS</span></div>
+            <div class="agent-actions" id="agent-actions"></div>
+          </div>
+        </div>
+        <div class="steps">
+          <article class="step" data-agent="cards">
+            <span class="kicker">06 · Observation</span>
+            <h2>The open orders, as the agent sees them</h2>
+            <p>At a real decision in this shift, these are the orders in the robot’s 16 slots: value, tier, dock, slack until the truck, items left, distance, whether it fits, and age.</p>
+          </article>
+          <article class="step" data-agent="tokens">
+            <span class="kicker">07 · Tokens</span>
+            <h2>Orders become a set of tokens</h2>
+            <p>Each order becomes a 14-feature token. A Transformer encoder treats them as a <em>set</em> — no order is first — so the same policy runs unchanged with 24 or 32 slots.</p>
+          </article>
+          <article class="step" data-agent="attention">
+            <span class="kicker">08 · Attention</span>
+            <h2>Attention decides what matters</h2>
+            <p>A learned [CLS] token attends over every order. Beam width is the real attention weight from the trained policy at this decision. On average express orders get 2× their uniform share.</p>
+          </article>
+          <article class="step" data-agent="pointer">
+            <span class="kicker">09 · Action</span>
+            <h2>A pointer picks one order</h2>
+            <p>A pointer head scores each order slot; a small head scores DELIVER, CHARGE and WAIT. An action mask removes anything invalid or unsafe. The highlighted order is the one the policy actually chose.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- 4 — LEARNING -->
+      <section id="learning" class="panel panel-tall" data-label="Learning">
+        <div class="panel-copy">
+          <span class="kicker">The breakthrough</span>
+          <h2 data-reveal>How far ahead should the agent care?</h2>
+          <p data-reveal>Actions take different amounts of time, so the textbook choice discounts by γ<sup>τ</sup> per tick. With γ = 0.995 that fades within a few dozen decisions — 26 on this shift. Discounting <em>per decision</em> keeps the whole shift in view — and trained far better.</p>
+        </div>
+        <figure class="discount" id="discount-viz" aria-label="Discount weight of each decision in the shift under the two schemes"></figure>
+        <div class="panel-copy narrow">
+          <h3 data-reveal>Five seeds each, same 2M-decision budget</h3>
+        </div>
+        <figure class="chart" id="curves-chart" aria-label="Validation task return during training for both discount schemes"></figure>
+        <div class="callouts" data-reveal>
+          <div><b>132.0 → 153.0</b><span>held-out task return</span></div>
+          <div><b>60.2% → 67.3%</b><span>revenue captured</span></div>
+          <div><b>5× larger model</b><span>no further gain</span></div>
+        </div>
+      </section>
+
+      <!-- 5 — DUEL -->
+      <section id="duel" class="panel" data-label="Head to head">
+        <div class="panel-copy">
+          <span class="kicker">Same shift, same orders</span>
+          <h2 data-reveal>PPO-Attention vs a hand-written rule</h2>
+          <p data-reveal>Both play held-out seed 100026 from the same start. Greedy picks the highest value per unit distance; EDF picks the earliest deadline and collapses under overload, chasing orders that are already lost.</p>
+        </div>
+        <div class="duel-controls" role="tablist" aria-label="Opponent">
+          <button role="tab" aria-selected="true" data-opponent="greedy">vs Greedy</button>
+          <button role="tab" aria-selected="false" data-opponent="edf">vs EDF</button>
+          <button class="replay" data-replay>↻ Replay</button>
+        </div>
+        <div class="duel">
+          <div class="duel-side">
+            <header><span class="dot" style="--c: var(--robot-0)"></span>PPO-Attention<b id="duel-a">0.0%</b></header>
+            <canvas id="duel-a-canvas" role="img" aria-label="Trained policy replay"></canvas>
+          </div>
+          <div class="duel-side">
+            <header><span class="dot" style="--c: var(--muted)"></span><span id="duel-b-name">Greedy</span><b id="duel-b">0.0%</b></header>
+            <canvas id="duel-b-canvas" role="img" aria-label="Baseline replay"></canvas>
+          </div>
+        </div>
+        <div class="duel-clock"><span id="duel-clock-bar"></span></div>
+      </section>
+
+      <!-- 6 — LOOK-AHEAD (pinned) -->
+      <section id="lookahead" class="scrolly" data-label="Look-ahead">
+        <div class="scrolly-sticky">
+          <div class="stage">
+            <canvas id="la-canvas" role="img" aria-label="Look-ahead: candidate actions fan out from the robot as ghost paths; the chosen one is highlighted."></canvas>
+            <div class="la-panel" id="la-panel" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="steps">
+          <article class="step" data-la="0">
+            <span class="kicker">10 · Imagining futures</span>
+            <h2>Before acting, imagine 32 futures</h2>
+            <p>At each decision the planner tries every valid action on 32 sampled futures — new order arrivals, new truck jitter — and finishes each with the policy. It never sees the real future.</p>
+          </article>
+          <article class="step" data-la="1">
+            <span class="kicker">11 · Scoring</span>
+            <h2>Every branch gets a score</h2>
+            <p>Ghost paths are the candidate actions; the bars are the mean revenue each one reached across the sampled futures.</p>
+          </article>
+          <article class="step" data-la="2">
+            <span class="kicker">12 · Overruling the policy</span>
+            <h2>Sometimes it disagrees with PPO</h2>
+            <p>Here the look-ahead overrules the policy’s first choice. Over 100 held-out seeds this lifts revenue from <b>66.4%</b> to <b>71.0%</b> (paired +4.6 ± 1.7) for the same checkpoint.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- 7 — FLEET -->
+      <section id="fleet" class="panel" data-label="Fleet">
+        <div class="panel-copy">
+          <span class="kicker">Scaling out</span>
+          <h2 data-reveal>One shared brain, three robots</h2>
+          <p data-reveal>The same simulator runs robots asynchronously: whichever robot frees up next asks the shared policy what to do. Orders are claimed so no two robots chase the same one. On this shift three robots capture <b id="fleet-pct">98.8%</b>. (The fleet policies were trained with the original γ<sup>τ</sup> discounting.)</p>
+        </div>
+        <div class="fleet-wrap">
+          <canvas id="fleet-canvas" role="img" aria-label="Three robots sharing one policy on the same shift"></canvas>
+          <div class="fleet-legend">
+            <span><i style="--c: var(--robot-0)"></i>R1</span>
+            <span><i style="--c: var(--robot-1)"></i>R2</span>
+            <span><i style="--c: var(--robot-2)"></i>R3</span>
+          </div>
+        </div>
+        <figure class="chart small" id="fleet-chart" aria-label="Task return with one, two and three robots"></figure>
+      </section>
+
+      <!-- 8 — RESULTS -->
+      <section id="results" class="panel" data-label="Results">
+        <div class="panel-copy">
+          <span class="kicker">The scoreboard</span>
+          <h2 data-reveal>Revenue captured on 100 held-out seeds</h2>
+          <p data-reveal>Seeds the agent never trained or validated on. ± is not shown for single-run baselines; learned agents are averaged over 5 training seeds.</p>
+        </div>
+        <figure class="chart" id="results-chart" aria-label="Revenue captured by every agent"></figure>
+        <details class="table-view">
+          <summary>View as table</summary>
+          <div id="results-table"></div>
+        </details>
+      </section>
+
+      <!-- 9 — HONESTY -->
+      <section id="limits" class="panel" data-label="Limits">
+        <div class="panel-copy">
+          <span class="kicker">What this is — and isn’t</span>
+          <h2 data-reveal>Honest limits</h2>
+        </div>
+        <div class="limits" data-reveal>
+          <div><h3>A simulator</h3><p>Demand, layouts and reward weights are modelled assumptions, not measurements from a live facility.</p></div>
+          <div><h3>The future is the real limit</h3><p>With Greedy finishing the simulations, look-ahead given the true future reaches 72.0% on the first 20 seeds, against 63.1% with sampled futures.</p></div>
+          <div><h3>Planning costs compute</h3><p>Look-ahead takes about 3 s per decision; the policy alone decides in milliseconds.</p></div>
+          <div><h3>Fleet coordination</h3><p>The three-robot result uses a shared policy with order claiming — evidence of scale, not optimal multi-agent coordination.</p></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>DockRush — PPO with a permutation-invariant attention policy in an event-driven semi-MDP.</p>
+      <p>
+        <a href="https://github.com/Mohi1038/rl-warehouse-fulfillment">Source &amp; models on GitHub</a>
+        · <a href="https://github.com/Mohi1038/rl-warehouse-fulfillment/blob/main/report.pdf">Two-page report</a>
+      </p>
+    </footer>
+    <div class="tooltip" id="tooltip" role="tooltip"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
