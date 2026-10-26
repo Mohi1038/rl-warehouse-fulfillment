@@ -12,6 +12,10 @@ a battery. The decision-maker is a reinforcement-learning agent: PPO with a
 permutation-invariant attention policy, trained in an event-driven semi-MDP simulator.
 Rule-based policies (FIFO, EDF, Greedy) exist only as evaluation baselines.
 
+**Interactive walkthrough:** [mohi1038.github.io/rl-warehouse-fulfillment](https://mohi1038.github.io/rl-warehouse-fulfillment/),
+a scroll-driven site where every animation replays the real simulator and trained policy
+(source in [site/](site/); see [Website](#website)).
+
 ### Watch the policies
 
 | Learned policy | Value-based baseline |
@@ -168,8 +172,8 @@ same samples.
   while PPO was trained on a reward that weights express orders 1.5×.
 - **It costs compute:** about 3 s per decision on 10 cores, against milliseconds for PPO alone.
   This is PPO plus decision-time planning, not a faster policy.
-- **Knowing the future is worth more:** on the first 20 seeds the same look-ahead given the true
-  future reaches 72.0%, against 63.9% with sampled futures and 58.5% for PPO alone.
+- **Knowing the future is worth more:** on the first 20 seeds, with Greedy finishing the
+  simulations, look-ahead given the true future reaches 72.0% against 63.1% with sampled futures.
 
 Per-episode results: [results/lookahead_ppo_k32.json](results/lookahead_ppo_k32.json).
 
@@ -280,6 +284,22 @@ models/          pretrained checkpoints (best_<algo>.pt and every seed of the ma
 results/         evaluation JSON, tables.md, variants.md       figures/  all plots        assets/  GIFs
 tests/           env invariants, determinism, generators, layouts, networks, GAE, replay, renderer
 ```
+
+## Website
+
+`site/` is a Vite + TypeScript site (Three.js, GSAP ScrollTrigger, Lenis, D3) that explains the
+project step by step: the warehouse in 3D, demand, the attention policy, discounting, a PPO vs
+baseline race, look-ahead and the fleet. Its animations replay real episodes from held-out seed 100026,
+exported by [experiments/export_site_data.py](experiments/export_site_data.py) into
+`site/public/data/`.
+
+```bash
+python experiments/export_site_data.py --seed 100026   # regenerate the replay data (~2 min)
+cd site && npm ci && npm run dev                         # local preview
+```
+
+Pushing changes under `site/` to `main` deploys it to GitHub Pages
+([.github/workflows/pages.yml](.github/workflows/pages.yml)).
 
 ## Engineering
 
